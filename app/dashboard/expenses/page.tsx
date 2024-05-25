@@ -1,13 +1,14 @@
-var mongoose = require('mongoose');
-let transaction = mongoose.model("transaction")
+import ExpensesTable from "@/app/ui/expenses/expenses-table";
+import Link from "next/link";
 
 export default async function Page() {
-
-  const expense = await transaction.find({
-      transaction_date: "2024-05-01"
-    });
   return <div>
-      <p>Expenses Page</p>
-      <p>{JSON.stringify(expense)}</p>
-    </div>;
+    <Link
+      key={"New Expense"}
+      href={"/dashboard/expenses/new"}
+      className="mt-4 w-half">
+        + New Expense
+    </Link>
+    <ExpensesTable/>
+  </div>
   }

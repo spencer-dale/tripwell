@@ -13,4 +13,4 @@ let transactionSchema = new mongoose.Schema({
   currency: String,
 });
 
-module.exports = mongoose.model('transaction', transactionSchema);
+export const transactions = mongoose.models.transaction || mongoose.model('transaction', transactionSchema);
