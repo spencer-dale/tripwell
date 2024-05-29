@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { createTransaction } from "@/app/lib/utils/transactions";
-import { Transaction } from "@/app/lib/data/transactions";
+import { createTransaction } from "@/app/lib/db/transactions";
+import { Transaction } from "@/app/lib/types";
 
 export function NewExpenseForm() {
   const {

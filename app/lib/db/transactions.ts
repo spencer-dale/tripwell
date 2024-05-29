@@ -1,8 +1,8 @@
 'use server'
 
-import { Transaction } from "../data/transactions";
-import { connectDb } from "./database";
-import { transactions } from "@/app/lib/models/transaction";
+import { Transaction } from "../types";
+import { connectDb } from "./conn";
+import { transactions } from "./models";
 
 export async function createTransaction(transaction: Transaction) {
     await connectDb()

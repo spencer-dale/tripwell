@@ -13,4 +13,17 @@ let transactionSchema = new mongoose.Schema({
   currency: String,
 });
 
+let activitySchema = new mongoose.Schema({
+  activity_id: String,
+  trip_id: String,
+  linked_expense_ids: {
+    type: [String],
+    required: false,
+  },
+  description: String,
+  activity_date: String,
+});
+
 export const transactions = mongoose.models.transaction || mongoose.model('transaction', transactionSchema);
+export const activities = mongoose.models.activity || mongoose.model('activity', activitySchema);
+
