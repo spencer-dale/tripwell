@@ -18,7 +18,7 @@ export function NewExpenseForm() {
     var transaction: Transaction = {
         transaction_id: fakeId,
         trip_id: fakeId,
-        linked_activity_id: "",
+        activity_id: "",
         description: data.description,
         transaction_date: data.date,
         amount: data.amount,

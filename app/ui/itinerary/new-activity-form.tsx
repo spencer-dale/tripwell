@@ -18,7 +18,6 @@ export function NewActivityForm() {
     var activity: Activity = {
         activity_id: fakeId,
         trip_id: fakeId,
-        linked_expense_ids: [""],
         description: data.description,
         activity_date: data.date,
     }
