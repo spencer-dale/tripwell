@@ -1,6 +1,6 @@
 import InvoiceStatus from '@/app/ui/expenses/status';
 import { formatCurrency } from '@/app/lib/utils';
-import { getAllTransactions } from '@/app/lib/utils/transactions';
+import { getAllTransactions } from '@/app/lib/db/transactions';
 
 export default async function ExpensesTable() {
   const expenses = await getAllTransactions()
