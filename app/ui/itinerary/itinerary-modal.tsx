@@ -2,16 +2,19 @@
 
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
-import { Activity } from '@/app/lib/types';
+import { Activity, Transaction } from '../../lib/types';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ExpensesTable from '../expenses/expenses-table';
 
 export function ItineraryModal(props: any) {
 
   let activity: Activity = props.activity;
 
-  if (activity == null) {
-    return <></>
-  }
+  if (activity == null) { return <></> }
+
+  let expenses: [Transaction] = props.expenses.filter(
+    (expense: Transaction) => expense.activity_id === activity.activity_id
+  )
 
   return (
     <Modal show={props.show} onHide={props.onHide} centered={true}>
@@ -27,9 +30,10 @@ export function ItineraryModal(props: any) {
           </div>
         </div>
         <div className="flex w-full items-center justify-between pt-4">
-          <div>
-            <p>Expenses Table</p>
-          </div>
+          <ExpensesTable
+            expenses={expenses}
+            show={true}
+          />
         </div>
       </Modal.Body>
       <Modal.Footer>

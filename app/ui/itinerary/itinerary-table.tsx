@@ -8,6 +8,8 @@ export default function ItineraryTable(props: any) {
   const [show, setShow] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
+  if (!props.show) { return <></> }
+
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">

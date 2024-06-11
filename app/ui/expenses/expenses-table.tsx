@@ -1,16 +1,18 @@
+'use client'
+
 import InvoiceStatus from '@/app/ui/expenses/status';
 import { formatCurrency } from '@/app/lib/utils';
-import { getAllTransactions } from '@/app/lib/db/transactions';
 
-export default async function ExpensesTable() {
-  const expenses = await getAllTransactions()
+export default function ExpensesTable(props: any) {
+
+  if (!props.show) { return <></> }
 
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
           <div className="md:hidden">
-            {expenses?.map((expense: any) => (
+            {props.expenses?.map((expense: any) => (
               <div
                 key={expense.transaction_id}
                 className="mb-2 w-full rounded-md bg-white p-4"
