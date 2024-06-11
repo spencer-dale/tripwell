@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link';
-// import NavLinks from '@/app/ui/itinerary/nav-links';
 import { ArrowLeftIcon, DocumentDuplicateIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { Button } from '../button';
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import ItineraryTable from '../itinerary/itinerary-table';
 import ExpensesTable from '../expenses/expenses-table';
-import SideNav from '@/app/ui/itinerary/sidenav';
+import SideNav from '../itinerary/sidenav';
 
 export function Trip(props: any) {
   const [showActivities, setShowActivities] = useState(true);
