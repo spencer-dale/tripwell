@@ -37,8 +37,9 @@ export default function ItineraryTable(props: any) {
             <ItineraryModal
               activity={selectedActivity}
               expenses={props.expenses}
-              show={show}
+              linkExpenseToActivity={props.linkExpenseToActivity}
               onHide={() => setShow(false)}
+              show={show}
             />
           </div>
         </div>

@@ -4,7 +4,7 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { Activity, Transaction } from '../../lib/types';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ExpensesTable from '../expenses/expenses-table';
+import { ExpensesTable } from '../expenses/expenses-table';
 import { LinkExpenseModal } from './link-expense-modal';
 import { useState } from 'react';
 
@@ -57,8 +57,9 @@ export function ItineraryModal(props: any) {
       <LinkExpenseModal
         activity={activity}
         expenses={props.expenses}
-        show={showLinkExpenseModal}
+        linkExpenseToActivity={props.linkExpenseToActivity}
         onHide={() => setShowLinkExpenseModal(false)}
+        show={showLinkExpenseModal}
       />
     </>
   );

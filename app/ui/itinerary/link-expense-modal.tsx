@@ -3,7 +3,7 @@
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { Activity, Transaction } from '../../lib/types';
-import ExpensesTable from '../expenses/expenses-table';
+import { SelectableExpenseTable } from '../expenses/expenses-table';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 export function LinkExpenseModal(props: any) {
@@ -22,9 +22,10 @@ export function LinkExpenseModal(props: any) {
       </Modal.Header>
       <Modal.Body>
         <div className="flex w-full items-center justify-between pt-4">
-          <ExpensesTable
+          <SelectableExpenseTable
+            activity={activity}
             expenses={unlinkedExpenses}
-            show={true}
+            linkExpenseToActivity={props.linkExpenseToActivity}
           />
         </div>
       </Modal.Body>

@@ -1,5 +1,5 @@
 import { getAllTransactions } from '../lib/db/transactions';
-import { getAllActivities } from '../lib/db/activities';
+import { getAllActivities, linkExpenseToActivity } from '../lib/db/activities';
 import { Trip } from '../ui/trip/trip'
 
 export default async function Page() {
@@ -13,6 +13,7 @@ export default async function Page() {
       <Trip
         activities={JSON.parse(JSON.stringify(activities))}
         expenses={JSON.parse(JSON.stringify(expenses))}
+        linkExpenseToActivity={linkExpenseToActivity}
       />
     </>
   );

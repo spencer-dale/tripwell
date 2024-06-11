@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import ItineraryTable from '../itinerary/itinerary-table';
-import ExpensesTable from '../expenses/expenses-table';
+import { ExpensesTable } from '../expenses/expenses-table';
 import SideNav from '../itinerary/sidenav';
 
 export function Trip(props: any) {
@@ -31,6 +31,7 @@ export function Trip(props: any) {
         <ItineraryTable
           activities={props.activities}
           expenses={props.expenses}
+          linkExpenseToActivity={props.linkExpenseToActivity}
           show={showActivities}
         />
         <ExpensesTable
