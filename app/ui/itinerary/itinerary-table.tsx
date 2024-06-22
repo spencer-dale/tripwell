@@ -8,6 +8,8 @@ export default function ItineraryTable(props: any) {
   const [show, setShow] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
+  if (!props.show) { return <></> }
+
   return (
     <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
@@ -35,8 +37,9 @@ export default function ItineraryTable(props: any) {
             <ItineraryModal
               activity={selectedActivity}
               expenses={props.expenses}
-              show={show}
+              linkExpenseToActivity={props.linkExpenseToActivity}
               onHide={() => setShow(false)}
+              show={show}
             />
           </div>
         </div>
