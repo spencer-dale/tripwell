@@ -13,3 +13,8 @@ export async function getAllTrips() {
     await connectDb()
     return await trips.find()
 }
+
+export async function getTripById(trip_id: string) {
+  await connectDb()
+  return await trips.findOne({trip_id: trip_id})
+}
