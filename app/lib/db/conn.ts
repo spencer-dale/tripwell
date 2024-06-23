@@ -15,8 +15,8 @@ export async function connectDb() {
     .then(() => {
       console.log('Database connection successful');
     })
-    .catch((_: any) => {
-      console.error('Database connection error');
+    .catch((error: any) => {
+      console.error('Database connection error: %s', error);
     });
 };
 

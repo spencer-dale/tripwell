@@ -9,7 +9,7 @@ export async function createTransaction(transaction: Transaction) {
     await transactions.create(transaction)
 }
 
-export async function getAllTransactions() {
+export async function getTransactionsByTripId(trip_id: string) {
     await connectDb()
-    return await transactions.find()
+    return await transactions.find({trip_id: trip_id})
 }

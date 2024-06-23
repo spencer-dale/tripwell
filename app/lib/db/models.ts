@@ -20,6 +20,14 @@ let activitySchema = new mongoose.Schema({
   activity_date: String,
 });
 
+let tripSchema = new mongoose.Schema({
+  trip_id: String,
+  name: String,
+  start_date: String,
+  end_date: String,
+});
+
 export const transactions = mongoose.models.transaction || mongoose.model('transaction', transactionSchema);
 export const activities = mongoose.models.activity || mongoose.model('activity', activitySchema);
+export const trips = mongoose.models.trip || mongoose.model('trip', tripSchema);
 

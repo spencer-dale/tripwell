@@ -9,9 +9,9 @@ export async function createActivity(activity: Activity) {
     await activities.create(activity)
 }
 
-export async function getAllActivities() {
+export async function getActivitiesByTripId(trip_id: string) {
     await connectDb()
-    return await activities.find()
+    return await activities.find({trip_id: trip_id})
 }
 
 export async function linkExpenseToActivity(expense: Transaction, activity: Activity) {
