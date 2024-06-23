@@ -14,3 +14,10 @@ export type Activity = {
     description: string,
     activity_date: string,
 }
+
+export type Trip = {
+  trip_id: string,
+  name: string,
+  start_date: string,
+  end_date: string,
+}
