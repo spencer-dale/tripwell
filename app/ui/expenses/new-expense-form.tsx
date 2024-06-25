@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { createTransaction } from "@/app/lib/db/transactions";
 import { Transaction } from "@/app/lib/types";
 
-export function NewExpenseForm() {
+export function NewExpenseForm(props: any) {
   const {
     register,
     handleSubmit,

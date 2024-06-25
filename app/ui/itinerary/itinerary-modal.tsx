@@ -23,21 +23,29 @@ export function ItineraryModal(props: any) {
     <>
       <Modal show={props.show} onHide={props.onHide} centered={true}>
         <Modal.Header closeButton>
-          <Modal.Title>{activity.description}</Modal.Title>
+          <Modal.Title>Activity details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="flex items-center justify-between border-b pb-4">
-            <div>
-              <div className="mb-2 flex items-center">
-                <p>{activity.activity_date}</p>
-              </div>
-            </div>
-          </div>
+        <Button
+            onClick={props.toEditingMode}
+          >
+            <p>Edit activity</p>
+          </Button>
           <Button
             onClick={() => setShowLinkExpenseModal(true)}
           >
             <p>Link an expense</p>
           </Button>
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <div className="mb-2 flex items-center">
+                <p>{activity.description}</p>
+              </div>
+              <div className="mb-2 flex items-center">
+                <p>{activity.activity_date}</p>
+              </div>
+            </div>
+          </div>
           <div className="flex w-full items-center justify-between pt-4">
             <ExpensesTable
               expenses={expenses}

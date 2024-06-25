@@ -9,6 +9,17 @@ export async function createActivity(activity: Activity) {
     await activities.create(activity)
 }
 
+export async function updateActivity(activity: Activity) {
+  return
+}
+
+export async function deleteActivity(activity: Activity) {
+  const filter = { activity_id: activity.activity_id }
+  
+  await connectDb()
+  await activities.findOneAndDelete(filter)
+}
+
 export async function getActivitiesByTripId(trip_id: string) {
     await connectDb()
     return await activities.find({trip_id: trip_id})
