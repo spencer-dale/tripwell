@@ -15,7 +15,7 @@ export function AcmeLogo() {
 export function AcmeLogoSmall() {
   return (
     <div className={`${galada.className} flex flex-row items-center leading-none`}>
-      <p className="text-[28px] text-blue-600 justify-center">
+      <p className="text-[28px] text-lightBlue justify-center">
         Tripwell
       </p>
     </div>

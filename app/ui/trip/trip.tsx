@@ -5,19 +5,24 @@ import ItineraryTable from '../itinerary/itinerary-table';
 import { ExpensesTable } from '../expenses/expenses-table';
 import SideNav from '../itinerary/sidenav';
 import { NewExpenseForm } from '../expenses/new-expense-form';
-import { Button } from '../button';
-import { NewActivityButton } from '../itinerary/itinerary-table';
-import { ActivityFormState, ItineraryModal } from '../itinerary/itinerary-modal';
-import { Activity } from '@/app/lib/types';
+import { NewItemButton } from '../itinerary/itinerary-table';
+import { ActivityFormState, ExpenseFormState, ItineraryModal } from '../itinerary/itinerary-modal';
+import { Activity, Transaction } from '@/app/lib/types';
+import { ActivityManager } from '@/app/lib/crud/activity-manager';
 
 export function Trip(props: any) {
   const [showActivities, setShowActivities] = useState(true);
   const [showExpenses, setShowExpenses] = useState(false);
-  const [showEditExpenseModal, setShowEditExpenseModal] = useState(false);
-  const [showActivityModal, setShowActivityModal] = useState(false);
+
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
-  const [inEditMode, setInEditMode] = useState(props.inEditMode)
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null)
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+
+  const [inEditActivityMode, setInEditActivityMode] = useState(props.inEditActivityMode)
   const [activityFormState, setActivityFormState] = useState<ActivityFormState>()
+  const [inEditExpenseMode, setInEditExpenseMode] = useState(props.inEditExpenseMode)
+  const [expenseFormState, setExpenseFormState] = useState<ExpenseFormState>()
 
   const openActivityModal = (activity: Activity | null) => {
     setSelectedActivity(activity)
@@ -28,12 +33,20 @@ export function Trip(props: any) {
     })
   }
 
+  const openExpenseModal = (expense: Transaction | null) => {
+    setSelectedExpense(expense)
+    setShowExpenseModal(true)
+    setExpenseFormState({})
+  }
+
+  let activityManager = new ActivityManager(props.trip.trip_id)
+
   return (
     <>
       <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
         <div className="w-full flex-none md:w-64">
           <SideNav
-            trip={props.trip}
+            plansTabSelected={showActivities}
             switchToActivities={
               () => {
                 setShowActivities(true)
@@ -46,44 +59,55 @@ export function Trip(props: any) {
                 setShowActivities(false)
               }
             }
+            trip={props.trip}
           />
         </div>
-        <NewActivityButton
+        <div className="mb-4 rounded-lg bg-gray-100 p-3">
+          <ItineraryTable
+            activities={props.activities}
+            activityFormState={activityFormState}
+            closeActivityModal={() => {
+              setShowActivityModal(false)
+              setSelectedActivity(null)
+            }}
+            expenses={props.expenses}
+            linkExpenseToActivity={props.linkExpenseToActivity}
+            openActivityModal={(activity: Activity) => {
+              setInEditActivityMode(false)
+              openActivityModal(activity)
+            }}
+            setActivityFormState={setActivityFormState}
+            setSelectedActivity={setSelectedActivity}
+            show={showActivities}
+            trip={props.trip}
+          />
+          <ExpensesTable
+            activities={props.activities}
+            expenses={props.expenses}
+            show={showExpenses}
+          />
+        </div>
+        <NewItemButton
           onClick={() => {
-            setInEditMode(true)
-            openActivityModal(null)
+            if (showActivities) {
+              setInEditActivityMode(true)
+              openActivityModal(null)
+            } else if (showExpenses) {
+              setInEditExpenseMode(true)
+              openExpenseModal(null)
+            }
           }}
-          show={showActivities}
-        />
-        <ItineraryTable
-          activities={props.activities}
-          closeActivityModal={() => {
-            setShowActivityModal(false)
-            setSelectedActivity(null)
-          }}
-          expenses={props.expenses}
-          linkExpenseToActivity={props.linkExpenseToActivity}
-          openActivityModal={(activity: Activity) => {
-            setInEditMode(false)
-            openActivityModal(activity)
-          }}
-          show={showActivities}
-          trip={props.trip}
-        />
-        <ExpensesTable
-          activities={props.activities}
-          expenses={props.expenses}
-          show={showExpenses}
         />
         <ItineraryModal
           activity={selectedActivity}
           activityFormState={activityFormState}
+          activityManager={activityManager}
           expenses={props.expenses}
-          inEditMode={inEditMode}
+          inEditMode={inEditActivityMode}
           linkExpenseToActivity={props.linkExpenseToActivity}
           onHide={() => setShowActivityModal(false)}
           setActivityFormState={setActivityFormState}
-          setInEditMode={setInEditMode}
+          setInEditMode={setInEditActivityMode}
           show={showActivityModal}
           trip={props.trip}
         />

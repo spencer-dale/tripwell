@@ -1,6 +1,5 @@
 'use client'
 
-import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { Activity, Transaction } from '../../lib/types';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -8,11 +7,15 @@ import { ExpensesTable } from '../expenses/expenses-table';
 import { LinkExpenseModal } from './link-expense-modal';
 import { useState } from 'react';
 import { v4 } from 'uuid';
+import { ActivityDetails } from '../../lib/crud/types'
+import { Button } from '../button';
 
 export type ActivityFormState = {
   activityDescription: string,
   activityDate: string
 }
+
+export type ExpenseFormState = {}
 
 export function ItineraryModal(props: any) {
   const [showLinkExpenseModal, setShowLinkExpenseModal] = useState(false);
@@ -46,18 +49,21 @@ export function ItineraryModal(props: any) {
   }
 
   const updateActivity = async (activityFormState: ActivityFormState) => {
-    var updatedActivity: Activity = {
-      activity_id: activity ? activity.activity_id : v4(),
-      trip_id: props.trip.trip_id,
+    let details: ActivityDetails = {
+      date: activityFormState.activityDate,
       description: activityFormState.activityDescription,
-      activity_date: activityFormState.activityDate,
     }
-    if (activity) {
-      console.log("updating activity, ", updatedActivity)
-      // updateActivity(updatedActivity)
+
+    if (props.activity) {
+      let updatedActivity: Activity = {
+        activity_id: activity.activity_id,
+        trip_id: activity.trip_id,
+        description: details.description,
+        activity_date: details.date,
+      }
+      props.activityManager.update(updatedActivity)
     } else {
-      console.log("creating activity, ", updatedActivity)
-      // createActivity(updatedActivity)
+      props.activityManager.create(details)
     }
   }
 
@@ -87,7 +93,8 @@ export function ItineraryModal(props: any) {
             <p>Edit</p>
           </Button>
           <Button
-            onClick={onDelete}
+            disabled={props.inEditMode}
+            onClick={() => props.activityManager.delete(activity)}
           >
             <p>Delete</p>
           </Button>
@@ -168,12 +175,20 @@ function ActivityDetailsEditor(props: any) {
         placeholder="Jan 1, 2024"
         ></input>
       </div>
-      <Button variant="secondary" onClick={props.onClose}>
-        Close
-      </Button>
-      <Button variant="primary" onClick={() => props.onSubmit(props.activityFormState)}>
-        Save Changes
-      </Button>
+      <div className="flow">
+        <ul>
+          <li>
+            <Button onClick={props.onClose} className="bg-gray-200 border-darkBlue border-2">
+              <p className="text-darkBlue items-center m-0">Close</p>
+            </Button>
+          </li>
+          <li>
+            <Button onClick={() => props.onSubmit(props.activityFormState)} className="bg-lightBlue">
+              Save
+            </Button>
+          </li>
+        </ul>
+      </div>
     </div>
   )
 }

@@ -10,7 +10,14 @@ export async function createActivity(activity: Activity) {
 }
 
 export async function updateActivity(activity: Activity) {
-  return
+  const filter = { activity_id: activity.activity_id}
+  const update = {
+    description: activity.description,
+    activity_date: activity.activity_date
+  }
+
+  await connectDb()
+  await activities.findOneAndUpdate(filter, update)
 }
 
 export async function deleteActivity(activity: Activity) {
