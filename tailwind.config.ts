@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: ["./pages/**/*.{js,ts,jsx,tsx,mdx}", "./components/**/*.{js,ts,jsx,tsx,mdx}", "./app/**/*.{js,ts,jsx,tsx,mdx}"],
+  content: ["./src/pages/**/*.{js,ts,jsx,tsx,mdx}", "./src/components/**/*.{js,ts,jsx,tsx,mdx}", "./src/app/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       gridTemplateColumns: {
@@ -13,7 +13,8 @@ const config: Config = {
           500: '#0070F3',
           600: '#2F6FEB',
         },
-        lightBlue: '#49D2D0',
+        // lightBlue: '#49D2D0',
+        lightBlue: '#63CCCA',
         darkBlue: '#15103F',
       },
     },
