@@ -27,10 +27,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "app/lib/placeholder-data.js",
-    "app/lib/utils/database.ts",
-    "app/lib/models/transactions.js",
-    "app/lib/models/test.js",
+    "src/app/lib/placeholder-data.js",
+    "src/app/lib/utils/database.ts",
+    "src/app/lib/models/transactions.js",
+    "src/app/lib/models/test.js",
     "scripts/seed.js"
   ],
   "exclude": ["node_modules"]
