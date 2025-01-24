@@ -23,6 +23,7 @@ export function NewExpenseForm(props: any) {
         transaction_date: data.date,
         amount: data.amount,
         currency: data.currency,
+        category: data.category,
     }
     createTransaction(transaction)
   };
