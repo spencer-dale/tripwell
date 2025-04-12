@@ -1,5 +1,13 @@
 import { Revenue } from './definitions';
 
+const millisPerMinute = 60000
+
+export const dateToDisplay = (uncastDate: Date) => {
+  let date: Date = new Date(uncastDate)
+  let localDate: Date = new Date(date.getTime() + date.getTimezoneOffset() * millisPerMinute)
+  return localDate.toDateString()
+}
+
 export const formatCurrency = (amount: number) => {
   return (amount).toLocaleString('en-US', {
     style: 'currency',

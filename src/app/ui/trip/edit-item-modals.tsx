@@ -3,12 +3,12 @@
 import Modal from 'react-bootstrap/Modal';
 import { commissioner, questrial } from '../fonts';
 import { Button } from '../button';
-import { ActivityFormState, ExpenseFormState } from './itinerary-modal';
+import { ActivityFormState, ExpenseFormState } from './form-states';
 import { useState } from 'react';
 import Form from "react-bootstrap/Form";
 import { useRouter } from 'next/navigation';
 
-export default function EditActivityModal(props: any) {
+export function EditActivityModal(props: any) {
   const router = useRouter();
   let [buttonToggle, setButtonToggle] = useState(true)
   let onClose = () => {
@@ -171,7 +171,7 @@ export function EditExpenseModal(props: any) {
   }
 
   let onUnlink = null
-  if (props.expense.activity_id !== "") {
+  if (props.expense?.activity_id !== "") {
     onUnlink = () => {
       props.unlinkExpense(props.expense)
       router.refresh()

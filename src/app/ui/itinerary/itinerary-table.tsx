@@ -4,8 +4,9 @@ import { Activity } from '@/src/app/lib/types';
 import { Button } from '../button';
 import { questrial } from '../fonts';
 import React, { useState } from 'react';
-import EditActivityModal from './edit-activity-modal';
-import { ActivityFormState } from './itinerary-modal'
+import { EditActivityModal } from '../trip/edit-item-modals';
+import { InvisibleButton } from '../button';
+import { dateToDisplay } from '../../lib/utils';
 
 type activityDateGroup = {
   date: Date,
@@ -27,7 +28,7 @@ export function ItineraryTableContainer({ children }: { children: React.ReactNod
 }
 
 export function ItineraryTable(props: any) {
-  if (!props.show) { return <></> }
+  if (!props.show || props.activities.length == 0) { return <></> }
 
   let sortedActivities = props.activities.toSorted((a: Activity, b: Activity) => new Date(a.activity_date).getTime() - new Date(b.activity_date).getTime())
   let groupedActivities: activityDateGroup[] = []
@@ -72,12 +73,6 @@ export function ItineraryTable(props: any) {
 }
 
 function ItineraryGroup(props: any) {
-  const dateToDisplay = (uncastDate: Date) => {
-    let date: Date = new Date(uncastDate)
-    let localDate: Date = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
-    return localDate.toDateString()
-  }
-
   return (
     <div>
       <div className="border-b-2 text-sm">
@@ -140,14 +135,6 @@ function ExpandedItineraryItem(props: any) {
         {props.linkedExpenseTable}
       </div>
     </ExpandedItineraryItemCard>
-  );
-}
-
-export function InvisibleButton({ children, onClick }: { children: React.ReactNode, onClick: () => void }) {
-  return (
-    <div onClick={onClick}>
-      {children}
-    </div>
   );
 }
 
@@ -215,44 +202,23 @@ function ExpandedItineraryItemDetails(props: any) {
   );
 }
 
-export function LinkedActivityTable(props: any) {
-  const [inEditMode, setInEditMode] = useState(false)
+export function LinkedActivitiesTable(props: any) {
   let linkedActivities = props.activities
-  let setActivityFormState = (activity: Activity) => {
-    let newState: ActivityFormState = {
-      activityDescription: activity ? activity.description : "",
-      activityDate: activity ? activity.activity_date : new Date(Date.now()),
-      activityCategory: activity ? activity.category : "",
-    }
-    props.setActivityFormState(newState)
-  }
 
   return (
     <div className="mt-1 flow-root">
       <div className="inline-block min-w-full align-middle">
         <div className="md:hidden">
           {linkedActivities?.map((activity: Activity) => (
-            <div>
-              <button
-                key={activity.activity_id}
-                className="m-0 w-full"
-              >
-                <LinkedActivityTableItem
-                  activity={activity}
-                  onEdit={() => {
-                    setInEditMode(true)
-                    setActivityFormState(activity)
-                  }}
-                />
-              </button>
-              <EditActivityModal
+            <div
+              key={activity.activity_id}
+              className="m-0 w-full"
+            >
+              <LinkedActivitiesTableItem
                 activity={activity}
                 activityFormState={props.activityFormState}
-                onClose={() => setInEditMode(false)}
-                onDelete={() => {}}
-                onSave={() => {}}
                 setActivityFormState={props.setActivityFormState}
-                show={inEditMode}
+                unlinkActivity={props.unlinkActivity}
               />
             </div>
           ))}
@@ -262,22 +228,44 @@ export function LinkedActivityTable(props: any) {
   );
 }
 
-function LinkedActivityTableItem(props: any) {
+function LinkedActivitiesTableItem(props: any) {
+  const [inEditMode, setInEditMode] = useState(false)
   let activity: Activity = props.activity
+
+  const onEdit = () => {
+    setInEditMode(true)
+    props.setActivityFormState(activity)
+  }
+
   return (
-    <div
-      key={activity.activity_id}
-      className="flex rounded-md rounded-lg mx-2 mt-2 px-2 pt-2 bg-gray-50 md:pt-0"
-      onClick={props.onEdit}
-    >
-      <div onClick={props.onClick} className="text-left">
-        <p className={`${questrial.className} text-md mb-0`}>
-          {activity.description}
-        </p>
-        <p className={`${questrial.className} text-md text-gray-400 mb-1`}>
-          {activity.category}
-        </p>
+    <div>
+      <div
+        key={activity.activity_id}
+        className="rounded-md rounded-lg mx-2 mt-2 px-2 pt-2 bg-gray-50 md:pt-0"
+        onClick={onEdit}
+      >
+        <div className="flex justify-start col-span-3 text-left">
+          <div>
+            <p className={`${questrial.className} text-md mb-0`}>
+              {activity.description}
+            </p>
+            <p className={`${questrial.className} text-md text-gray-400 mb-0`}>
+              {activity.category}
+            </p>
+          </div>
+        </div>
       </div>
+      <EditActivityModal
+        activity={activity}
+        activityFormState={props.activityFormState}
+        onClose={() => {
+          setInEditMode(false)
+        }}
+        onSave={props.onSave}
+        setActivityFormState={props.setActivityFormState}
+        show={inEditMode}
+        unlinkActivity={props.unlinkActivity}
+      />
     </div>
   );
 }

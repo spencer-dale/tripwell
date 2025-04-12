@@ -111,7 +111,7 @@ function ExpensesByCategoryTable(props: any) {
         </p>
       </div>
       {Array.from(expensesByCategoryMap.entries()).map(([category, expenses], idx) => (
-        <div className="border-bottom grid grid-cols-2 py-2">
+        <div key={idx} className="border-bottom grid grid-cols-2 py-2">
           <p className={`${questrial.className} text-md mb-0`}>
             {category}
           </p>
@@ -137,7 +137,7 @@ function ExpenseCurrenciesByCategory(props: any) {
   return (
     <div>
       {Array.from(currencyToTotalAmountMap.entries()).map(([currency, amount], idx) => (
-        <div>
+        <div key={idx}>
           <p className={`${questrial.className} text-md mb-0`}>
             {currency} {formatCurrency(amount)}
           </p>
