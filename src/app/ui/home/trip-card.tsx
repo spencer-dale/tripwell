@@ -8,12 +8,13 @@ export default function TripCard(props: any) {
     return localDate.toDateString()
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "2-digit",
-    }).format(date);
+    }).format(dateObj);
   }
 
   return (

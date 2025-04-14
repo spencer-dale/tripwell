@@ -14,6 +14,8 @@ import { Activity, Transaction } from '@/src/app/lib/types';
 import { Tab } from '../itinerary/sidenav';
 import { TripOverview } from './trip-overview';
 import { LinkExpenseModal } from '../itinerary/link-expense-modal'
+import { TripExpenses } from './trip-expenses';
+import { PlansCalendar } from './plans-calendar';
 
 function isActivityFormStateComplete(state: ActivityFormState) : boolean {
   return (state.activityDescription !== "")
@@ -43,6 +45,7 @@ function formStateFromExpense(expense: Transaction | null) : ExpenseFormState {
 
 export function Trip(props: any) {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Overview)
+  const [highlights, setHighlights] = useState<any[]>([])
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
   const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null)
@@ -183,6 +186,10 @@ export function Trip(props: any) {
     expenseItems[expense.transaction_id] = buildExpenseItem(expense, linkedActivities)
   })
 
+  const handleAddHighlight = () => {
+    // Implement highlight creation logic
+  };
+
   return (
     <>
       <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
@@ -195,27 +202,37 @@ export function Trip(props: any) {
             trip={props.trip}
           />
         </div>
-        <div>
-          {activeTab === Tab.Overview ? <TripOverview
-            activities={props.activities}
-            expenses={props.expenses}
-            trip={props.trip}
-          /> : <></>}
-          <ItineraryTableContainer>
-            <ItineraryTable
-              activities={props.activities}  // for sorting purposes only
-              itineraryItems={itineraryItems}
-              show={activeTab === Tab.Plans ? true : false}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === Tab.Overview && (
+            <TripOverview
+              trip={props.trip}
+              activities={props.activities}
+              expenses={props.expenses}
+              highlights={highlights}
+              onAddHighlight={handleAddHighlight}
+              onSwitchToPlans={() => setActiveTab(Tab.Plans)}
+              onSwitchToSpend={() => setActiveTab(Tab.Spend)}
             />
-          </ItineraryTableContainer>
-          
-          <ExpenseTableContainer>
-            <ExpensesTable
-              expenseItems={expenseItems}
-              expenses={props.expenses}  // for sorting purposes only (?)
-              show={activeTab === Tab.Spend ? true : false}
-            />
-          </ExpenseTableContainer>
+          )}
+          {activeTab === Tab.Plans && (
+            <div className="space-y-6">
+              <PlansCalendar
+                trip={props.trip}
+                destinations={props.trip.destinations}
+                activities={props.activities}
+              />
+              <ItineraryTableContainer>
+                <ItineraryTable
+                  activities={props.activities}  // for sorting purposes only
+                  itineraryItems={itineraryItems}
+                />
+              </ItineraryTableContainer>
+            </div>
+          )}
+          {activeTab === Tab.Spend && <TripExpenses
+            expenseItems={expenseItems}
+            expenses={props.expenses}  // for sorting purposes only (?)
+          />}
         </div>
         {activeTab !== Tab.Overview ? <NewItemButton
           onClick={() => {

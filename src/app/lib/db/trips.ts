@@ -10,11 +10,21 @@ export async function createTrip(trip: Trip) {
 }
 
 export async function getAllTrips() : Promise<Trip[]> {
-    await connectDb()
-    return await trips.find()
+    try {
+        await connectDb()
+        return await trips.find().lean().exec()
+    } catch (error) {
+        console.error('Error fetching trips:', error)
+        return []
+    }
 }
 
-export async function getTripById(trip_id: string) : Promise<Trip> {
-  await connectDb()
-  return await trips.findOne({trip_id: trip_id})
+export async function getTripById(trip_id: string) : Promise<Trip | null> {
+    try {
+        await connectDb()
+        return await trips.findOne({trip_id: trip_id}).lean().exec()
+    } catch (error) {
+        console.error('Error fetching trip:', error)
+        return null
+    }
 }

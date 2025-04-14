@@ -28,7 +28,7 @@ export function ItineraryTableContainer({ children }: { children: React.ReactNod
 }
 
 export function ItineraryTable(props: any) {
-  if (!props.show || props.activities.length == 0) { return <></> }
+  if (props.activities.length == 0) { return <></> }
 
   let sortedActivities = props.activities.toSorted((a: Activity, b: Activity) => new Date(a.activity_date).getTime() - new Date(b.activity_date).getTime())
   let groupedActivities: activityDateGroup[] = []

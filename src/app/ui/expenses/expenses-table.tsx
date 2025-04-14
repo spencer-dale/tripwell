@@ -28,7 +28,7 @@ export function ExpenseTableContainer({ children }: { children: React.ReactNode 
 }
 
 export function ExpensesTable(props: any) {
-  if (!props.show || (props.expenses.length == 0)) { return <></> }
+  if (props.expenses.length == 0) { return <></> }
 
   let sortedExpenses = props.expenses.toSorted((a: Transaction, b: Transaction) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime())
   let groupedExpenses: expenseDateGroup[] = []

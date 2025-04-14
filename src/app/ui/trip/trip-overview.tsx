@@ -1,42 +1,122 @@
-import { Activity, Transaction } from '@/src/app/lib/types';
+'use client'
+
+import { Trip, Activity, Transaction } from '@/src/app/lib/types';
 import { CollapsedItineraryItem } from '../itinerary/itinerary-table'
 import { commissioner, questrial } from '../fonts';
 import { formatCurrency } from '../../lib/utils';
+import { TripHighlights } from './trip-highlights';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { convertToCAD } from '@/src/app/lib/currency';
+import { Button } from '../button';
+import { TripTimeline } from './trip-timeline';
 
-export function TripOverview(props: any) {
+interface TripOverviewProps {
+  trip: Trip;
+  activities: Activity[];
+  expenses: Transaction[];
+  highlights: any[]; // Replace with proper type
+  onAddHighlight: () => void;
+  onSwitchToPlans: () => void;
+  onSwitchToSpend: () => void;
+}
 
-  let today = new Date()
-  let tripStart = new Date(props.trip.start_date)
-  let tripEnd = new Date(props.trip.end_date)
-  console.log("today: ", today)
-  console.log("start: ", tripStart)
-  console.log("end: ", tripEnd)
-  console.log("trip: ", props.trip)
+export function TripOverview({
+  trip,
+  activities,
+  expenses,
+  highlights,
+  onAddHighlight,
+  onSwitchToPlans,
+  onSwitchToSpend
+}: TripOverviewProps) {
+  const router = useRouter();
+  
+  // Calculate total expenses in CAD
+  const totalExpenses = expenses.reduce((sum, expense) => {
+    return sum + convertToCAD(expense.amount, expense.currency);
+  }, 0);
 
-  var currentDayActivities: Activity[] = []
-  for (let i = 0; i < props.activities.length; i++) {
-      let date = new Date(props.activities[i].activity_date)
-      if (date.toISOString().slice(0, 10) === today.toISOString().slice(0, 10)) {
-          currentDayActivities.push(props.activities[i])
-      }
-  }
-  console.log("today's activities:", currentDayActivities)
+  // Calculate total accommodation costs in CAD
+  const totalAccommodationCost = trip.destinations.reduce((sum, destination) => {
+    return sum + convertToCAD(
+      destination.accommodation.total_cost,
+      destination.accommodation.currency
+    );
+  }, 0);
+
   return (
-    <div>
-      {today.getTime() < tripStart.getTime() ? 
-        <></> : 
-        today.getTime() > tripEnd.getTime() ?
-        <></> :
-        <CurrentDayItineraryTable
-          activities={currentDayActivities}
-          currentDate={today}
-        />
-      }
-      <ExpensesByCategoryTable
-        expenses={props.expenses}
+    <div className="space-y-6">
+      {/* Trip Highlights Section */}
+      <TripHighlights
+        highlights={highlights}
+        onAddHighlight={onAddHighlight}
       />
+
+      {/* Quick Actions Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Trip Timeline */}
+        <TripTimeline
+          trip={trip}
+          onViewItinerary={onSwitchToPlans}
+        />
+
+        {/* Expenses Summary Card */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold mb-4">Expenses</h2>
+            <Button
+              onClick={onSwitchToSpend}
+              className="flex items-center gap-2"
+            >
+              All Expenses
+              <ArrowRightIcon className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {/* Total Expenses */}
+          <div className="mb-6">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold">{formatCurrency(totalExpenses)}</span>
+              <span className="text-gray-500">CAD</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Total trip expenses</p>
+          </div>
+
+          {/* Accommodation Costs */}
+          <div className="mb-6">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold">{formatCurrency(totalAccommodationCost)}</span>
+              <span className="text-gray-500">CAD</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Total accommodation costs</p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Current Day Activities (if trip is ongoing) */}
+      {isTripOngoing(trip.start_date, trip.end_date) && (
+        <CurrentDayItineraryTable
+          activities={getCurrentDayActivities(activities)}
+          currentDate={new Date()}
+        />
+      )}
     </div>
   );
+}
+
+function isTripOngoing(startDate: Date, endDate: Date): boolean {
+  const today = new Date();
+  return today >= new Date(startDate) && today <= new Date(endDate);
+}
+
+function getCurrentDayActivities(activities: Activity[]): Activity[] {
+  const today = new Date();
+  return activities.filter(activity => {
+    const activityDate = new Date(activity.activity_date);
+    return activityDate.toISOString().slice(0, 10) === today.toISOString().slice(0, 10);
+  });
 }
 
 function CurrentDayItineraryTable(props: any) {

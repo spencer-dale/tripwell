@@ -38,6 +38,7 @@
     "react-bootstrap": "^2.10.2",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.51.5",
+    "recharts": "^2.15.2",
     "svix": "^1.40.0",
     "uuid": "^10.0.0",
     "zod": "^3.22.2"
