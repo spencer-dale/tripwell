@@ -11,7 +11,7 @@ import { ExpenseManager } from '@/src/app/lib/crud/expense-manager';
 import { EditActivityModal, EditExpenseModal, NewActivityModal, NewExpenseModal } from './edit-item-modals';
 import { commissioner } from '../fonts';
 import { Activity, Transaction } from '@/src/app/lib/types';
-import { Tab } from '../itinerary/sidenav';
+import { Tab } from '../itinerary/types';
 import { TripOverview } from './trip-overview';
 import { LinkExpenseModal } from '../itinerary/link-expense-modal'
 import { TripExpenses } from './trip-expenses';
