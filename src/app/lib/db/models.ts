@@ -5,6 +5,11 @@ var mongoose = require('mongoose');
 // Define sub-schemas first
 let accommodationSchema = new mongoose.Schema({
     name: String,
+    type: {
+        type: String,
+        enum: ['hotel', 'apartment', 'hostel', 'airbnb', 'other'],
+        default: 'hotel'
+    },
     address: String,
     total_cost: Number,
     currency: String,
@@ -47,7 +52,10 @@ let tripSchema = new mongoose.Schema({
     name: String,
     start_date: Date,
     end_date: Date,
-    destinations: [destinationSchema],
+    destinations: {
+      type: [destinationSchema],
+      default: [],
+    },
     primary_user_id: String,
 });
 
@@ -57,6 +65,7 @@ let userSchema = new mongoose.Schema({
 });
 
 export const transactions = mongoose.models.transaction || mongoose.model('transaction', transactionSchema);
-export const activities = mongoose.models.activity || mongoose.model('activity', activitySchema);
 export const trips = mongoose.models.trip || mongoose.model('trip', tripSchema);
+export const destinations = mongoose.models.destination || mongoose.model('destination', destinationSchema);
+export const activities = mongoose.models.activity || mongoose.model('activity', activitySchema);
 export const users = mongoose.models.user || mongoose.model('user', userSchema);

@@ -1,5 +1,8 @@
+export type AccommodationType = 'hotel' | 'apartment' | 'hostel' | 'airbnb' | 'other';
+
 export type Accommodation = {
     name: string;
+    type: AccommodationType;
     address: string;
     total_cost: number;
     currency: string;

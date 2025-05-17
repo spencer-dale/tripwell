@@ -1,10 +1,11 @@
 import { Mongoose } from 'mongoose';
 var mongoose = require('mongoose');
 
-const username = process.env.DB_USERNAME;
-const password = process.env.DB_PASSWORD;
-const server = process.env.DB_SERVER;
-const database = process.env.DB_NAME;
+const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  throw new Error('MONGODB_URI environment variable is not set');
+}
 
 declare global {
   var mongoose: {
@@ -32,7 +33,7 @@ export async function connectDb() {
       socketTimeoutMS: 45000,
     };
 
-    cached.promise = mongoose.connect(`mongodb+srv://${username}:${password}@${server}/${database}`, opts)
+    cached.promise = mongoose.connect(uri, opts)
       .then((conn: Mongoose) => {
         console.log('Database connection successful');
         return conn;
