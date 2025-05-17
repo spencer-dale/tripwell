@@ -49,12 +49,12 @@ export default async function Page({ params }: { params: { trip: string } }) {
       />
       <Link
         href="/trips"
-        className="absolute top-4 left-4 z-2 bg-white rounded-full shadow-lg p-2 flex items-center justify-center hover:bg-gray-100 transition-colors"
+        className="absolute z-2 bg-white rounded-full shadow-lg p-2 flex items-center justify-center hover:bg-gray-100 transition-colors"
         style={{ width: 40, height: 40 }}
       >
         <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
       </Link>
-      <div className="relative z-1 pt-48 sm:pt-56 md:pt-64 h-full">
+      <div className="relative z-1 pt-44 sm:pt-56 md:pt-64 h-full">
         <Trip
           activities={JSON.parse(JSON.stringify(activities))}
           expenses={JSON.parse(JSON.stringify(expenses))}

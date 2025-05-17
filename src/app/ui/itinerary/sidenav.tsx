@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { commissioner, questrial } from '../fonts';
 import { Trip } from '@/src/app/lib/types';
 import { Tab } from './types';
+import { Users } from "lucide-react"
 
 interface SideNavProps {
   activeTab: Tab;
@@ -37,26 +38,22 @@ export default function SideNav({ activeTab, switchToOverview, switchToTrip, swi
   return (
     <>
       <div className="flex h-full flex-col">
-        {/* <Link
-          key={"Trips"}
-          href={"/trips"}
-        >
-          <ArrowLeftIcon className="ml-auto h-4 w-4 text-gray-300 m-0 mb-2" />
-        </Link> */}
         <div className="flex flex-col py-2 items-left">
           <p className={`${commissioner.className} text-2xl font-bold m-0`}>
             {trip.name}
           </p>
-          <p className={`${questrial.className} text-md text-gray-400`}>
+          <p className={`${questrial.className} text-md text-gray-400 m-0`}>
             {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
           </p>
-          <button
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-fit"
-            type="button"
-            // onClick={...} // To be implemented later
-          >
-            Invite
-          </button>
+          <div className="my-2">
+            <button
+              className="rounded-full border-dashed border-2 flex items-center gap-2 px-4"
+              // onClick={...} // To be implemented later
+            >
+              <Users className="h-5 w-5" />
+              <span>Invite</span>
+            </button>
+          </div>
         </div>
         <div className={`${commissioner.className} text-base text-center text-gray-500 border-gray-200`}>
           <ul className="m-0 p-0 flex flex-row grid grid-cols-4">

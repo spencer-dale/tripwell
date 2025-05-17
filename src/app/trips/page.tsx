@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Trip } from '@/src/app/lib/types';
-import { PlusIcon, ClockIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ClockIcon, CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { getTripsData } from '@/src/app/lib/actions/trips';
+import { getTripsData, handleCreateTrip } from '@/src/app/lib/actions/trips';
 
 interface TripSectionProps {
   title: string;
@@ -51,6 +51,8 @@ export default function TripsPage() {
   const [invitations, setInvitations] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showPastTrips, setShowPastTrips] = useState(false);
+  const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const [form, setForm] = useState({ name: '', start: '', end: '' });
 
   useEffect(() => {
     async function loadTrips() {
@@ -68,6 +70,21 @@ export default function TripsPage() {
 
     loadTrips();
   }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name || !form.start || !form.end) return;
+    await handleCreateTrip({ name: form.name, start_date: form.start, end_date: form.end });
+    setShowNewTripModal(false);
+    setForm({ name: '', start: '', end: '' });
+    setIsLoading(true);
+    // Reload trips
+    const data = await getTripsData();
+    setCurrentTrips(data.currentTrips);
+    setPastTrips(data.pastTrips);
+    setInvitations(data.invitations);
+    setIsLoading(false);
+  }
 
   if (isLoading) {
     return (
@@ -91,14 +108,76 @@ export default function TripsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
-        <Link
-          href="/trips/new"
+        <button
+          onClick={() => setShowNewTripModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <PlusIcon className="h-5 w-5" />
           <span>New Trip</span>
-        </Link>
+        </button>
       </div>
+
+      {/* New Trip Modal */}
+      {showNewTripModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowNewTripModal(false)}
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+            <h2 className="text-xl font-bold mb-4">Create New Trip</h2>
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Trip name"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-3 py-2"
+                    value={form.start}
+                    onChange={e => setForm(f => ({ ...f, start: e.target.value }))}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-3 py-2"
+                    value={form.end}
+                    onChange={e => setForm(f => ({ ...f, end: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  onClick={() => setShowNewTripModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-8">
         <TripSection

@@ -1,6 +1,6 @@
 'use server';
 
-import { getAllTrips } from '../db/trips';
+import { getAllTrips, createTrip } from '../db/trips';
 import { Trip } from '../types';
 
 function isValidDate(date: any): date is Date {
@@ -45,4 +45,16 @@ export async function getTripsData() {
       invitations: [],
     };
   }
+}
+
+export async function handleCreateTrip({ name, start_date, end_date }: { name: string; start_date: string; end_date: string }) {
+  const trip: Trip = {
+    trip_id: crypto.randomUUID(),
+    name,
+    start_date: new Date(start_date),
+    end_date: new Date(end_date),
+    destinations: [],
+  };
+  await createTrip(trip);
+  return trip;
 } 
