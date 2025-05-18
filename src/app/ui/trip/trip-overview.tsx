@@ -59,10 +59,8 @@ export function TripOverview({
     })
     .reduce((sum, expense) => sum + convertToCAD(expense.amount, expense.currency), 0);
 
-  // Calculate total expenses in CAD (including accommodation and transportation)
-  const totalExpenses = expenses.reduce((sum, expense) => {
-    return sum + convertToCAD(expense.amount, expense.currency);
-  }, 0) + totalAccommodationCost + totalTransportationCost;
+  // Calculate total expenses in CAD (including accommodation)
+  const totalExpenses = totalOtherCost + totalTransportationCost + totalAccommodationCost;
 
   return (
     <div className="h-full flex flex-col">
@@ -222,7 +220,12 @@ function getCurrentDayActivities(activities: Activity[]): Activity[] {
   });
 }
 
-function CurrentDayItineraryTable(props: any) {
+interface CurrentDayItineraryTableProps {
+  activities: Activity[];
+  currentDate: Date;
+}
+
+function CurrentDayItineraryTable({ activities, currentDate }: CurrentDayItineraryTableProps) {
   const dateToDisplay = (uncastDate: Date) => {
     let date: Date = new Date(uncastDate)
     let localDate: Date = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
@@ -242,12 +245,12 @@ function CurrentDayItineraryTable(props: any) {
               </div>
               <div className="border-b-2 text-sm">
                 <a>
-                  {dateToDisplay(props.currentDate)}
+                  {dateToDisplay(currentDate)}
                 </a>
               </div>
-              {props.activities?.length > 0 ?
+              {activities?.length > 0 ?
                 <div>
-                  {props.activities?.map((activity: Activity, idx: number) => (
+                  {activities?.map((activity: Activity) => (
                     <div
                       key={activity.activity_id}
                       className="mt-2 w-full"
@@ -275,16 +278,17 @@ function CurrentDayItineraryTable(props: any) {
   );
 }
 
-function ExpensesByCategoryTable(props: any) {
-  let expensesByCategoryMap = new Map()
-  props.expenses.map((expense: Transaction) => {
-    let expenses = [expense]
-    if (expensesByCategoryMap.has(expense.category)) {
-      expenses = expensesByCategoryMap.get(expense.category)
-      expenses.push(expense)
-    }
-    expensesByCategoryMap.set(expense.category, expenses)
-  })
+interface ExpensesByCategoryTableProps {
+  expenses: Transaction[];
+}
+
+function ExpensesByCategoryTable({ expenses }: ExpensesByCategoryTableProps) {
+  let expensesByCategoryMap = new Map<string, Transaction[]>();
+  expenses.forEach((expense: Transaction) => {
+    let categoryExpenses = expensesByCategoryMap.get(expense.category) || [];
+    categoryExpenses.push(expense);
+    expensesByCategoryMap.set(expense.category, categoryExpenses);
+  });
   
   return (
     <div>
@@ -293,13 +297,13 @@ function ExpensesByCategoryTable(props: any) {
           Total spend
         </p>
       </div>
-      {Array.from(expensesByCategoryMap.entries()).map(([category, expenses], idx) => (
+      {Array.from(expensesByCategoryMap.entries()).map(([category, categoryExpenses], idx) => (
         <div key={idx} className="border-bottom grid grid-cols-2 py-2">
           <p className={`${questrial.className} text-md mb-0`}>
             {category}
           </p>
           <ExpenseCurrenciesByCategory
-            expenses={expenses}
+            expenses={categoryExpenses}
           />
         </div>
       ))}
@@ -307,22 +311,23 @@ function ExpensesByCategoryTable(props: any) {
   );
 }
 
-function ExpenseCurrenciesByCategory(props: any) {
-  let currencyToTotalAmountMap = new Map()
-  props.expenses.map((expense: Transaction) => {
-    let updatedTotal = expense.amount || 0
-    if (currencyToTotalAmountMap.has(expense.currency)) {
-      updatedTotal += currencyToTotalAmountMap.get(expense.currency) || 0
-    }
-    currencyToTotalAmountMap.set(expense.currency, updatedTotal)
-  })
-  console.log("totals by currency", currencyToTotalAmountMap)
+interface ExpenseCurrenciesByCategoryProps {
+  expenses: Transaction[];
+}
+
+function ExpenseCurrenciesByCategory({ expenses }: ExpenseCurrenciesByCategoryProps) {
+  let currencyToTotalAmountMap = new Map<string, number>();
+  expenses.forEach((expense: Transaction) => {
+    const currentTotal = currencyToTotalAmountMap.get(expense.currency) || 0;
+    currencyToTotalAmountMap.set(expense.currency, currentTotal + (expense.amount || 0));
+  });
+
   return (
     <div>
       {Array.from(currencyToTotalAmountMap.entries()).map(([currency, amount], idx) => (
         <div key={idx}>
           <p className={`${questrial.className} text-md mb-0`}>
-            {currency} {formatCurrency(amount || 0)}
+            {currency} {formatCurrency(amount)}
           </p>
         </div>
       ))}
