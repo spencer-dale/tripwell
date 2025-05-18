@@ -49,8 +49,6 @@ let activitySchema = new mongoose.Schema({
     description: String,
     activity_date: Date,
     category: String,
-    start_time: String,
-    end_time: String,
 });
 
 let tripSchema = new mongoose.Schema({

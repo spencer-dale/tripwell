@@ -66,8 +66,6 @@ export type SerializedActivity = {
     description: string;
     activity_date: string;
     category: string;
-    start_time?: string;
-    end_time?: string;
 }
 
 export type Trip = {
