@@ -19,6 +19,7 @@ interface ItineraryPanelProps {
   onEditDestination: (item: any) => void;
   onAddDestination: (afterItemId: string | null) => void;
   onReorderDestinations: (items: any[]) => void;
+  onEditActivity: (activity: Activity) => void;
 }
 
 export function ItineraryPanel({
@@ -32,6 +33,7 @@ export function ItineraryPanel({
   onEditDestination,
   onAddDestination,
   onReorderDestinations,
+  onEditActivity,
 }: ItineraryPanelProps) {
   const [currentView, setCurrentView] = useState<ItineraryView>('list');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
@@ -117,6 +119,7 @@ export function ItineraryPanel({
             setShowNewActivityModal(true);
             setSelectedDestination(null);
           }}
+          onEditActivity={onEditActivity}
           destination={selectedDestination}
           activities={activities.filter(activity => {
             const activityDate = new Date(activity.activity_date);

@@ -520,6 +520,11 @@ export function Trip(props: {
             // TODO: Implement reorder functionality
             console.log('Reorder items:', items);
           }}
+          onEditActivity={(activity) => {
+            setSelectedActivity(activity);
+            setActivityFormState(formStateFromActivity(activity));
+            setShowEditActivityModal(true);
+          }}
         />
         <ExpensesPanel
           isOpen={showExpenses}
