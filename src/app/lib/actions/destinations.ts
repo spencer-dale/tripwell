@@ -14,6 +14,7 @@ export async function handleCreateDestination(tripId: string, data: DestinationF
 }
 
 export async function handleUpdateDestination(destinationId: string, data: DestinationFormState) {
+  console.log('Updating destination:', destinationId, data);
   try {
     const destination = await updateDestination(destinationId, data);
     if (!destination) {
@@ -29,7 +30,10 @@ export async function handleUpdateDestination(destinationId: string, data: Desti
 export async function handleDeleteDestination(destinationId: string) {
   try {
     const success = await deleteDestination(destinationId);
-    return { success, error: success ? null : 'Failed to delete destination' };
+    if (!success) {
+      return { success: false, error: 'Destination not found' };
+    }
+    return { success: true };
   } catch (error) {
     console.error('Error deleting destination:', error);
     return { success: false, error: 'Failed to delete destination' };

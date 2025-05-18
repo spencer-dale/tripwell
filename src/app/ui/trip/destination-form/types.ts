@@ -20,5 +20,6 @@ export interface DestinationFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: DestinationFormState) => void;
+  onDelete?: () => void;
   initialData?: DestinationFormState;
 } 

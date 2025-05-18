@@ -31,7 +31,7 @@ export async function deleteTransaction(transaction: Transaction) {
     await transactions.findOneAndDelete(filter)
 }
 
-export async function getTransactionsByTripId(trip_id: string) {
+export async function getTransactionsByTripId(trip_id: string): Promise<Transaction[]> {
     await connectDb()
     return await transactions.find({trip_id: trip_id})
 }

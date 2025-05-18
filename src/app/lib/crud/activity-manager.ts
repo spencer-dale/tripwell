@@ -28,18 +28,10 @@ export class ActivityManager {
 
   async readByTripId() {
     let activities = await getActivitiesByTripId(this.trip_id)
-    var activitiesLocalTime: Activity[] = []
-    activities.map((activity: Activity, idx: number) => {
-      let localDatetime: number = new Date(activity.activity_date).getTime() + activity.activity_date.getTimezoneOffset() * 60000
-      activitiesLocalTime.push({
-        activity_id: activity.activity_id,
-        trip_id: activity.trip_id,
-        description: activity.description,
-        activity_date: new Date(localDatetime),
-        category: activity.category,
-      })
-    })
-    return activitiesLocalTime
+    return activities.map((activity: Activity) => ({
+      ...activity,
+      activity_date: new Date(activity.activity_date)
+    }))
   }
 
   update(activity: Activity): void {

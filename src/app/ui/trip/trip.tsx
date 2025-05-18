@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ItineraryItem, ItineraryTable, ItineraryTableContainer, LinkedActivitiesTable } from '../itinerary/itinerary-table';
 import { ExpenseItem, ExpensesTable, ExpenseTableContainer, LinkedExpenseTable } from '../expenses/expenses-table';
 import SideNav from '../itinerary/sidenav';
@@ -10,7 +11,7 @@ import { ActivityManager } from '@/src/app/lib/crud/activity-manager';
 import { ExpenseManager } from '@/src/app/lib/crud/expense-manager';
 import { EditActivityModal, EditExpenseModal, NewActivityModal, NewExpenseModal } from './edit-item-modals';
 import { commissioner } from '../fonts';
-import { Activity, Transaction, Trip as TripType, Destination } from '@/src/app/lib/types';
+import { Activity, Transaction, Trip as TripType, Destination, SerializedActivity, SerializedTransaction, SerializedTrip, SerializedDestination } from '@/src/app/lib/types';
 import { Tab } from '../itinerary/types';
 import { TripOverview } from './trip-overview';
 import { LinkExpenseModal } from '../itinerary/link-expense-modal'
@@ -21,7 +22,10 @@ import { Transport } from '@/src/app/lib/types/transport';
 import { DestinationForm } from './destination-form/destination-form';
 import { DestinationFormState } from './destination-form/types';
 import { TimelineItem } from './timeline/types';
-import { handleCreateDestination, handleUpdateDestination } from '@/src/app/lib/actions/destinations';
+import { handleCreateDestination, handleUpdateDestination, handleDeleteDestination } from '@/src/app/lib/actions/destinations';
+import { ItineraryPanel } from './itinerary-panel';
+import { ExpensesPanel } from './expenses-panel';
+import { PlaceDetailsPanel } from './place-details-sheet';
 
 function isActivityFormStateComplete(state: ActivityFormState) : boolean {
   return (state.activityDescription !== "")
@@ -32,10 +36,38 @@ function isExpenseFormStateComplete(state: ExpenseFormState) : boolean {
 }
 
 function formStateFromActivity(activity: Activity | null) : ActivityFormState {
+  console.log("looking at activity: ", activity)
+  if (!activity) {
+    return {
+      activityDate: new Date(Date.now()),
+      activityDescription: "",
+      activityCategory: "",
+    }
+  }
+
+  // Create a new date object from the activity date
+  const activityDate = new Date(activity.activity_date);
+  
+  // Ensure the date is treated as UTC by creating a new UTC date
+  const utcDate = new Date(Date.UTC(
+    activityDate.getUTCFullYear(),
+    activityDate.getUTCMonth(),
+    activityDate.getUTCDate(),
+    activityDate.getUTCHours(),
+    activityDate.getUTCMinutes()
+  ));
+
+  console.log('Creating form state with UTC date:', {
+    original: activityDate.toISOString(),
+    utc: utcDate.toISOString(),
+    hours: utcDate.getUTCHours(),
+    minutes: utcDate.getUTCMinutes()
+  });
+
   return {
-    activityDate: activity ? activity.activity_date : new Date(Date.now()),
-    activityDescription: activity ? activity.description : "",
-    activityCategory: activity ? activity.category : "",
+    activityDate: utcDate,
+    activityDescription: activity.description,
+    activityCategory: activity.category,
   }
 }
 
@@ -49,16 +81,62 @@ function formStateFromExpense(expense: Transaction | null) : ExpenseFormState {
   }
 }
 
+// Helper functions to convert serialized objects back to their original types
+function deserializeActivity(activity: SerializedActivity): Activity {
+  // Create a new date object from the ISO string
+  const activityDate = new Date(activity.activity_date);
+  
+  // Create a new UTC date using the components
+  const utcDate = new Date(Date.UTC(
+    activityDate.getUTCFullYear(),
+    activityDate.getUTCMonth(),
+    activityDate.getUTCDate(),
+    activityDate.getUTCHours(),
+    activityDate.getUTCMinutes()
+  ));
+
+  return {
+    ...activity,
+    activity_date: utcDate
+  };
+}
+
+function deserializeTransaction(transaction: SerializedTransaction): Transaction {
+  return {
+    ...transaction,
+    transaction_date: new Date(transaction.transaction_date)
+  };
+}
+
+function deserializeDestination(destination: SerializedDestination): Destination {
+  return {
+    ...destination,
+    start_date: new Date(destination.start_date),
+    end_date: new Date(destination.end_date)
+  };
+}
+
+function deserializeTrip(trip: SerializedTrip): TripType {
+  return {
+    ...trip,
+    start_date: new Date(trip.start_date),
+    end_date: new Date(trip.end_date),
+    destinations: trip.destinations.map(deserializeDestination)
+  };
+}
+
 export function Trip(props: {
-  trip: TripType;
-  activities: Activity[];
-  expenses: Transaction[];
+  trip: SerializedTrip;
+  activities: SerializedActivity[];
+  expenses: SerializedTransaction[];
   transports: Transport[];
   linkExpensesToActivity: (activityId: string, expenseId: string) => Promise<void>;
   unlinkExpense: (expenseId: string) => Promise<void>;
 }) {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.Overview)
+  const router = useRouter();
   const [highlights, setHighlights] = useState<any[]>([])
+  const [showFullItinerary, setShowFullItinerary] = useState(false)
+  const [showExpenses, setShowExpenses] = useState(false)
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
   const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null)
@@ -72,11 +150,17 @@ export function Trip(props: {
   const [showNewExpenseModal, setShowNewExpenseModal] = useState(false)
   const [showEditExpenseModal, setShowEditExpenseModal] = useState(false)
 
-  const [showDestinationForm, setShowDestinationForm] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<DestinationFormState | null>(null);
+  const [selectedPlaceDetails, setSelectedPlaceDetails] = useState<Destination | null>(null);
+  const [showDestinationForm, setShowDestinationForm] = useState(false);
 
-  let activityManager = new ActivityManager(props.trip.trip_id)
-  let expenseManager = new ExpenseManager(props.trip.trip_id)
+  // Convert serialized data to regular types
+  const trip = deserializeTrip(props.trip);
+  const activities = props.activities.map(deserializeActivity);
+  const expenses = props.expenses.map(deserializeTransaction);
+
+  let activityManager = new ActivityManager(trip.trip_id)
+  let expenseManager = new ExpenseManager(trip.trip_id)
 
   let createActivityFromForm = (state: ActivityFormState) => {
     if (isActivityFormStateComplete(state)) {
@@ -112,7 +196,7 @@ export function Trip(props: {
   }
 
   let buildItineraryItem = (activity: Activity, linkedExpenses: Transaction[]) => {
-    console.log("linked expenses:", linkedExpenses)
+    // console.log("linked expenses:", linkedExpenses)
     var linkedExpenseTable: JSX.Element
     if (linkedExpenses.length > 0) {
       linkedExpenseTable = <LinkedExpenseTable
@@ -143,7 +227,7 @@ export function Trip(props: {
   }
 
   let buildExpenseItem = (expense: Transaction, linkedActivities: Activity[]) => {
-    console.log("linked activities:", linkedActivities)
+    // console.log("linked activities:", linkedActivities)
     var linkedActivitiesTable: JSX.Element
     if (linkedActivities.length > 0) {
       linkedActivitiesTable = <LinkedActivitiesTable
@@ -179,15 +263,15 @@ export function Trip(props: {
   let itineraryItems: LinkedItems = {}
   let expenseItems: LinkedItems = {}
 
-  props.activities.map((activity: Activity) => {
-    const linkedExpenses = props.expenses.filter(
+  activities.map((activity: Activity) => {
+    const linkedExpenses = expenses.filter(
       (expense: Transaction) => expense.activity_id === activity.activity_id
     );
     itineraryItems[activity.activity_id] = buildItineraryItem(activity, linkedExpenses);
   });
   
-  props.expenses.map((expense: Transaction) => {
-    const linkedActivities = props.activities.filter(
+  expenses.map((expense: Transaction) => {
+    const linkedActivities = activities.filter(
       (activity: Activity) => activity.activity_id === expense.activity_id
     );
     expenseItems[expense.transaction_id] = buildExpenseItem(expense, linkedActivities);
@@ -199,31 +283,118 @@ export function Trip(props: {
 
   const handleSaveDestination = async (data: DestinationFormState) => {
     try {
-      let result;
-      if (data.id) {
-        result = await handleUpdateDestination(data.id, data);
+      // Log the form data
+      console.log('Form data received:', {
+        id: data.id,
+        country: data.country,
+        city: data.city,
+        region: data.region,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        accommodation: {
+          name: data.accommodation.name,
+          type: data.accommodation.type,
+          address: data.accommodation.address,
+          cost: data.accommodation.cost,
+          currency: data.accommodation.currency
+        }
+      });
+
+      // Create a clean copy of the data for saving
+      const cleanData = {
+        id: data.id,
+        start_date: new Date(data.start_date),
+        end_date: new Date(data.end_date),
+        country: data.country,
+        city: data.city || '',
+        region: data.region || '',
+        accommodation: {
+          name: data.accommodation.name,
+          type: data.accommodation.type,
+          address: data.accommodation.address,
+          cost: Number(data.accommodation.cost),
+          currency: data.accommodation.currency
+        }
+      };
+
+      let response;
+      if (cleanData.id) {
+        console.log('Updating existing destination with ID:', cleanData.id);
+        response = await fetch(`/api/destinations/${cleanData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(cleanData),
+        });
       } else {
-        result = await handleCreateDestination(props.trip.trip_id, data);
+        console.log('Creating new destination for trip:', trip.trip_id);
+        response = await fetch(`/api/destinations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...cleanData, trip_id: trip.trip_id }),
+        });
       }
 
-      if (!result.success || !result.data) {
+      const result = await response.json();
+
+      if (!response.ok) {
         throw new Error(result.error || 'Failed to save destination');
       }
 
-      // Update the destinations list
-      const updatedDestinations = props.trip.destinations.map(dest => 
-        dest.destination_id === result.data.destination_id ? result.data : dest
-      );
-      if (!data.id) {
-        updatedDestinations.push(result.data);
-      }
-      props.trip.destinations = updatedDestinations;
+      console.log('Successfully saved destination:', {
+        id: result.data.destination_id,
+        country: result.data.country,
+        city: result.data.city
+      });
 
       // Close the form
       setShowDestinationForm(false);
       setSelectedDestination(null);
+
+      // Refresh the page data
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error saving destination:', {
+        errorMessage: error?.message || 'Unknown error',
+        errorName: error?.name || 'Unknown error type'
+      });
+    }
+  };
+
+  const onDeleteDestination = async () => {
+    if (!selectedDestination?.id) return;
+
+    try {
+      console.log('Deleting destination:', {
+        id: selectedDestination.id,
+        country: selectedDestination.country,
+        city: selectedDestination.city,
+        dates: `${selectedDestination.start_date.toISOString()} - ${selectedDestination.end_date.toISOString()}`
+      });
+
+      const result = await handleDeleteDestination(selectedDestination.id);
+      if (!result.success) {
+        console.error('Failed to delete destination:', result.error);
+        throw new Error(result.error || 'Failed to delete destination');
+      }
+
+      console.log('Successfully deleted destination:', {
+        id: selectedDestination.id,
+        country: selectedDestination.country,
+        city: selectedDestination.city
+      });
+
+      // Close the form
+      setShowDestinationForm(false);
+      setSelectedDestination(null);
+
+      // Refresh the page data
+      router.refresh();
     } catch (error) {
-      console.error('Error saving destination:', error);
+      console.error('Error deleting destination:', error);
       // TODO: Show error toast
     }
   };
@@ -253,85 +424,33 @@ export function Trip(props: {
       <div className="flex h-full flex-col md:flex-row md:overflow-hidden">
         <div className="w-full flex-none md:w-64">
           <SideNav
-            activeTab={activeTab}
-            switchToOverview={() => setActiveTab(Tab.Overview)}
-            switchToTrip={() => setActiveTab(Tab.Trip)}
-            switchToPlans={() => setActiveTab(Tab.Plans)}
-            switchToSpend={() => setActiveTab(Tab.Spend)}
-            trip={props.trip}
+            trip={trip}
           />
         </div>
         {/* Scrollable main content area */}
         <div
-          className="flex-1 overflow-y-auto p-6 pb-16"
+          className="flex-1 overflow-y-auto p-6"
           style={{
-            height: 'calc(100vh - 12rem - 4rem)', // 12rem = banner, 4rem = bottom nav
-            maxHeight: 'calc(100vh - 12rem - 4rem)',
+            height: 'calc(100vh - 11rem - 4rem - 8.5rem)', // 11rem = banner, 4rem = bottom nav, 8.5rem = custom adjustment
+            maxHeight: 'calc(100vh - 11rem - 4rem - 8.5rem)',
           }}
         >
-          {activeTab === Tab.Overview && (
-            <TripOverview
-              trip={props.trip}
-              activities={props.activities}
-              expenses={props.expenses}
-              highlights={highlights}
-              onAddHighlight={handleAddHighlight}
-              onSwitchToPlans={() => setActiveTab(Tab.Plans)}
-              onSwitchToSpend={() => setActiveTab(Tab.Spend)}
-            />
-          )}
-          {activeTab === Tab.Trip && (
-            <div className="space-y-6">
-              <Timeline
-                destinations={props.trip.destinations}
-                transports={props.transports}
-                onEdit={(item) => {
-                  const formState = convertTimelineItemToFormState(item);
-                  if (formState) {
-                    setSelectedDestination(formState);
-                    setShowDestinationForm(true);
-                  }
-                }}
-                onAdd={(afterItemId) => {
-                  setSelectedDestination(null);
-                  setShowDestinationForm(true);
-                }}
-                onReorder={(items) => {
-                  // TODO: Implement reorder functionality
-                  console.log('Reorder items:', items);
-                }}
-              />
-            </div>
-          )}
-          {activeTab === Tab.Plans && (
-            <div className="space-y-6">
-              <PlansCalendar
-                trip={props.trip}
-                destinations={props.trip.destinations}
-                activities={props.activities}
-              />
-              <ItineraryTableContainer>
-                <ItineraryTable
-                  activities={props.activities}
-                  itineraryItems={itineraryItems}
-                />
-              </ItineraryTableContainer>
-            </div>
-          )}
-          {activeTab === Tab.Spend && <TripExpenses
-            expenseItems={expenseItems}
-            expenses={props.expenses}
-          />}
+          <TripOverview
+            trip={trip}
+            activities={activities}
+            expenses={expenses}
+            highlights={highlights}
+            onAddHighlight={handleAddHighlight}
+            onSwitchToPlans={() => setShowFullItinerary(true)}
+            onSwitchToSpend={() => setShowExpenses(true)}
+            onAddDestination={(afterItemId) => {
+              setSelectedDestination(null);
+              setShowDestinationForm(true);
+            }}
+            setSelectedDestination={setSelectedPlaceDetails}
+            setShowNewExpenseModal={setShowNewExpenseModal}
+          />
         </div>
-        {activeTab !== Tab.Overview ? <NewItemButton
-          onClick={() => {
-            if (activeTab === Tab.Plans) {
-              setShowNewActivityModal(true)
-            } else if (activeTab === Tab.Spend) {
-              setShowNewExpenseModal(true)
-            }
-          }}
-        /> : <></>}
         <NewActivityModal
           onClose={() => setShowNewActivityModal(false)}
           onCreate={createActivityFromForm}
@@ -340,15 +459,26 @@ export function Trip(props: {
         <EditActivityModal
           activity={selectedActivity}
           activityFormState={activityFormState}
-          onClose={() => setShowEditActivityModal(false)}
-          onDelete={(activity: Activity) => activityManager.delete(activity)}
-          onSave={(activity: Activity) => activityManager.update(activity)}
-          setActivityFormState={(activity: Activity) => setActivityFormState(formStateFromActivity(activity))}
+          onClose={() => {
+            setShowEditActivityModal(false);
+            setSelectedActivity(null);
+          }}
+          onDelete={(activity: Activity) => {
+            activityManager.delete(activity);
+            setShowEditActivityModal(false);
+            setSelectedActivity(null);
+          }}
+          onSave={(activity: Activity) => {
+            activityManager.update(activity);
+            setShowEditActivityModal(false);
+            setSelectedActivity(null);
+          }}
+          setActivityFormState={(state: ActivityFormState) => setActivityFormState(state)}
           show={showEditActivityModal}
         />
         <LinkExpenseModal
           activity={selectedActivity}
-          expenses={props.expenses}
+          expenses={expenses}
           linkExpensesToActivity={props.linkExpensesToActivity}
           onClose={() => setShowLinkExpenseModal(false)}
           show={showLinkExpenseModal}
@@ -367,6 +497,72 @@ export function Trip(props: {
           setExpenseFormState={setExpenseFormState}
           show={showEditExpenseModal}
         />
+        <ItineraryPanel
+          isOpen={showFullItinerary}
+          onClose={() => setShowFullItinerary(false)}
+          trip={trip}
+          destinations={trip.destinations}
+          activities={activities}
+          transports={props.transports}
+          itineraryItems={itineraryItems}
+          onEditDestination={(item) => {
+            const formState = convertTimelineItemToFormState(item);
+            if (formState) {
+              setSelectedDestination(formState);
+              setShowDestinationForm(true);
+            }
+          }}
+          onAddDestination={(afterItemId) => {
+            setSelectedDestination(null);
+            setShowDestinationForm(true);
+          }}
+          onReorderDestinations={(items) => {
+            // TODO: Implement reorder functionality
+            console.log('Reorder items:', items);
+          }}
+        />
+        <ExpensesPanel
+          isOpen={showExpenses}
+          onClose={() => setShowExpenses(false)}
+          trip={trip}
+          expenses={expenses}
+          expenseItems={expenseItems}
+        />
+        {/* Place Details Panel */}
+        {selectedPlaceDetails && (
+          <PlaceDetailsPanel
+            isOpen={!!selectedPlaceDetails}
+            onClose={() => setSelectedPlaceDetails(null)}
+            onEdit={() => {
+              const formState = convertTimelineItemToFormState({
+                id: selectedPlaceDetails.destination_id,
+                type: 'destination',
+                data: selectedPlaceDetails,
+                order: 0
+              });
+              if (formState) {
+                setSelectedDestination(formState);
+                setShowDestinationForm(true);
+              }
+              setSelectedPlaceDetails(null);
+            }}
+            onAddActivity={() => {
+              setShowNewActivityModal(true);
+              setSelectedPlaceDetails(null);
+            }}
+            onEditActivity={(activity) => {
+              setSelectedActivity(activity);
+              setActivityFormState(formStateFromActivity(activity));
+              setShowEditActivityModal(true);
+            }}
+            destination={selectedPlaceDetails}
+            activities={activities.filter(activity => {
+              const activityDate = new Date(activity.activity_date);
+              return activityDate >= new Date(selectedPlaceDetails.start_date) && 
+                     activityDate <= new Date(selectedPlaceDetails.end_date);
+            })}
+          />
+        )}
       </div>
       {showDestinationForm && (
         <DestinationForm
@@ -376,6 +572,7 @@ export function Trip(props: {
             setSelectedDestination(null);
           }}
           onSave={handleSaveDestination}
+          onDelete={onDeleteDestination}
           initialData={selectedDestination || undefined}
         />
       )}

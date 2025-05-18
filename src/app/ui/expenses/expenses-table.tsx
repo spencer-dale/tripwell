@@ -50,7 +50,7 @@ export function ExpensesTable(props: any) {
     }
   })
   groupedExpenses.push(activeGroup)
-  console.log("final expense groups", groupedExpenses)
+  // console.log("final expense groups", groupedExpenses)
 
   return (
     <>

@@ -61,7 +61,7 @@ export function TripTimeline({ trip, onViewItinerary }: TripTimelineProps) {
           onClick={onViewItinerary}
           className="flex items-center gap-2"
         >
-          Full Itinerary
+          View Itinerary
           <ArrowRightIcon className="h-5 w-5" />
         </Button>
       </div>

@@ -220,16 +220,19 @@ function ActivityDetailsEditor(props: any) {
   console.log("current state: ", formState)
 
   const dateStringFromDate = (date: Date) => {
-    console.log("current date: ", date)
-    return date.toISOString().substring(0,10)
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      console.warn("Invalid date provided:", date);
+      return new Date().toISOString().substring(0, 10);
+    }
+    // Format the date in UTC
+    return date.toISOString().substring(0, 10);
   }
 
   const updateActivityFormDescription = (newDescription: string) => {
     console.log("updating description to be: ", newDescription)
     var state: ActivityFormState = {
+      ...formState,
       activityDescription: newDescription,
-      activityDate: new Date(formState.activityDate),
-      activityCategory: formState.activityCategory,
     }
     console.log("new state: ", state)
     props.setActivityFormState(state)
@@ -237,12 +240,19 @@ function ActivityDetailsEditor(props: any) {
 
   const updateActivityFormDate = (newDate: string) => {
     console.log("updating date to be: ", newDate)
-    let date: Date = new Date(newDate)
-    console.log("converted date: ", date)
+    // Create date in UTC
+    const [year, month, day] = newDate.split('-').map(Number);
+    const currentDate = new Date(formState.activityDate);
+    const newDateTime = new Date(Date.UTC(year, month - 1, day));
+    newDateTime.setUTCHours(currentDate.getUTCHours(), currentDate.getUTCMinutes());
+    
+    if (isNaN(newDateTime.getTime())) {
+      console.warn("Invalid date string provided:", newDate);
+      return;
+    }
     var state: ActivityFormState = {
-      activityDate: date,
-      activityDescription: formState.activityDescription,
-      activityCategory: formState.activityCategory,
+      ...formState,
+      activityDate: newDateTime,
     }
     props.setActivityFormState(state)
   }
@@ -250,13 +260,68 @@ function ActivityDetailsEditor(props: any) {
   const updateActivityFormCategory = (newCategory: string) => {
     console.log("updating category to be: ", newCategory)
     var state: ActivityFormState = {
-      activityDate: new Date(formState.activityDate),
-      activityDescription: formState.activityDescription,
+      ...formState,
       activityCategory: newCategory,
     }
     console.log("new state: ", state)
     props.setActivityFormState(state)
   }
+
+  // Parse the current time from activity_date
+  const parseTimeFromDate = (date: Date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      console.warn("Invalid date provided:", date);
+      return { hour: '12', minute: '00', period: 'AM' };
+    }
+    
+    const hour = date.getUTCHours();
+    const minute = date.getUTCMinutes();
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    
+    return {
+      hour: hour12.toString().padStart(2, '0'),
+      minute: minute.toString().padStart(2, '0'),
+      period
+    };
+  };
+
+  // Update time when any of the time components change
+  const updateActivityFormTime = (component: 'hour' | 'minute' | 'period', value: string) => {
+    const currentDate = new Date(formState.activityDate);
+    const currentTime = parseTimeFromDate(currentDate);
+    const newTime = { ...currentTime, [component]: value };
+    
+    // Convert to 24-hour format
+    let hour24 = parseInt(newTime.hour);
+    if (newTime.period === 'PM') {
+      if (hour24 !== 12) {
+        hour24 += 12;
+      }
+    } else if (newTime.period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    
+    // Create new date with updated time in UTC
+    const newDate = new Date(currentDate);
+    newDate.setUTCHours(hour24, parseInt(newTime.minute));
+    
+    console.log("Updating time:", {
+      newTime,
+      hour24,
+      newDate: newDate.toISOString()
+    });
+    
+    var state: ActivityFormState = {
+      ...formState,
+      activityDate: newDate,
+      activityDescription: formState.activityDescription,
+      activityCategory: formState.activityCategory,
+    }
+    props.setActivityFormState(state)
+  }
+
+  const currentTime = parseTimeFromDate(new Date(formState.activityDate));
 
   return (
     <div>
@@ -278,6 +343,38 @@ function ActivityDetailsEditor(props: any) {
           />
         </Form.Group>
         <Form.Group className={`${questrial.className} text-md mb-0 pt-2`} controlId="activityDetailsEditorForm.ControlInput3">
+          <Form.Label>Time (Optional)</Form.Label>
+          <div className="flex gap-2 items-center">
+            <Form.Select
+              value={currentTime.hour}
+              onChange={(e) => updateActivityFormTime('hour', e.target.value)}
+              className="w-20"
+            >
+              {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(hour => (
+                <option key={hour} value={hour}>{hour}</option>
+              ))}
+            </Form.Select>
+            <span>:</span>
+            <Form.Select
+              value={currentTime.minute}
+              onChange={(e) => updateActivityFormTime('minute', e.target.value)}
+              className="w-20"
+            >
+              {Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0')).map(minute => (
+                <option key={minute} value={minute}>{minute}</option>
+              ))}
+            </Form.Select>
+            <Form.Select
+              value={currentTime.period}
+              onChange={(e) => updateActivityFormTime('period', e.target.value)}
+              className="w-20"
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </Form.Select>
+          </div>
+        </Form.Group>
+        <Form.Group className={`${questrial.className} text-md mb-0 pt-2`} controlId="activityDetailsEditorForm.ControlInput5">
           <Form.Label>Category</Form.Label>
           <Form.Control
             type="text"
@@ -493,7 +590,7 @@ export function NewExpenseModal(props: any) {
     expenseCurrency: "",
     expenseCategory: "",
   }
-  console.log("new expense form state: ", emptyExpenseFormState)
+  // console.log("new expense form state: ", emptyExpenseFormState)
   const [expenseFormState, setExpenseFormState] = useState<ExpenseFormState>(emptyExpenseFormState)
   let resetExpenseFormState = () => {
     setExpenseFormState(emptyExpenseFormState)

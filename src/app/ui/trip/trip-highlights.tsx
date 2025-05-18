@@ -23,7 +23,7 @@ export function TripHighlights({ highlights, onAddHighlight }: TripHighlightsPro
         alt="Binoculars icon"
         width={80}
         height={80}
-        className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 z-3"
+        className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 z-0"
         style={{ pointerEvents: 'none' }}
       />
       <h2 className="text-xl font-bold text-blue-900 mb-2">Trip Highlights</h2>

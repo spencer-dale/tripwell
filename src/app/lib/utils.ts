@@ -8,8 +8,9 @@ export const dateToDisplay = (uncastDate: Date) => {
   return localDate.toDateString()
 }
 
-export const formatCurrency = (amount: number) => {
-  return (amount).toLocaleString('en-US', {
+export const formatCurrency = (amount: number | undefined) => {
+  if (amount === undefined) return '$0.00';
+  return amount.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
   });

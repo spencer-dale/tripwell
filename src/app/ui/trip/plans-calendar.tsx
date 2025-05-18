@@ -165,7 +165,12 @@ export function PlansCalendar({ trip, destinations, activities }: PlansCalendarP
                 {getActivitiesForDate(selectedDate).map(activity => (
                   <tr key={activity.activity_id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(activity.activity_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(activity.activity_date).toLocaleTimeString('en-US', {
+                        timeZone: 'UTC',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {activity.description}

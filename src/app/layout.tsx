@@ -21,7 +21,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <main className="min-h-screen pb-16">
+          <main className="flex flex-col h-screen pb-16">
             {children}
           </main>
           <BottomNav />

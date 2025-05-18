@@ -1,160 +1,140 @@
 'use client';
 
-import { useState } from 'react';
-import { PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Destination } from '@/src/app/lib/types';
-import { TimelineProps, TimelineItem, Transport, TransportMode } from './types';
+import { MapPinIcon, BuildingOfficeIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { formatCurrency } from '@/src/app/lib/utils';
+import { convertToCAD } from '@/src/app/lib/currency';
+import { PlaceDetailsModal } from '../place-details-modal';
+import { Activity } from '@/src/app/lib/types';
+import { Transport, TransportMode } from '@/src/app/lib/types/transport';
 
 const transportIcons: Record<TransportMode, string> = {
-  plane: '✈️',
+  flight: '✈️',
   train: '🚂',
   car: '🚗',
   bus: '🚌',
   ferry: '⛴️',
-  walk: '🚶',
 };
 
-export default function Timeline({ destinations, transports, onEdit, onAdd, onReorder }: TimelineProps) {
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+interface TimelineProps {
+  destinations: Destination[];
+  transports: Transport[];
+  activities: Activity[];
+  onEdit: (item: any) => void;
+  onAdd: (afterItemId: string | null) => void;
+  onReorder: (items: any[]) => void;
+  hideControls?: boolean;
+}
 
-  // Combine destinations and transports into a single timeline
-  const timelineItems: TimelineItem[] = [
-    // Add all destinations and transports in order
-    ...destinations.flatMap((dest, index) => {
-      const items: TimelineItem[] = [];
-      
-      // Add transport to this destination if it exists
-      const transport = transports.find(t => t.to_destination_id === dest.destination_id);
-      if (transport) {
-        items.push({
-          id: transport.transport_id,
-          type: 'transport' as const,
-          data: transport,
-          order: index * 2 + 1,
-        });
-      }
+export default function Timeline({
+  destinations,
+  activities,
+  onEdit,
+  onAdd,
+  onReorder,
+  hideControls = false,
+}: TimelineProps) {
+  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
 
-      // Add the destination
-      items.push({
-        id: dest.destination_id,
-        type: 'destination' as const,
-        data: dest,
-        order: index * 2 + 2,
-      });
+  // Sort destinations by start date
+  const sortedDestinations = [...destinations].sort(
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
 
-      return items;
-    }),
-  ].sort((a, b) => a.order - b.order);
-
-  const toggleExpand = (itemId: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId);
+  const renderLocation = (destination: Destination) => {
+    if (destination.city) {
+      return (
+        <div>
+          <div className="font-medium">{destination.city}</div>
+          <div className="text-sm text-gray-500">
+            {destination.region && <div>{destination.region}, {destination.country}</div>}
+          </div>
+        </div>
+      );
+    } else if (destination.region) {
+      return (
+        <div>
+          <div className="font-medium">{destination.region}</div>
+          <div className="text-sm text-gray-500">{destination.country}</div>
+        </div>
+      );
     } else {
-      newExpanded.add(itemId);
+      return <div className="font-medium">{destination.country}</div>;
     }
-    setExpandedItems(newExpanded);
+  };
+
+  const getDestinationActivities = (destination: Destination) => {
+    if (!activities) return [];
+    return activities.filter(activity => {
+      const activityDate = new Date(activity.activity_date);
+      return activityDate >= new Date(destination.start_date) && 
+             activityDate <= new Date(destination.end_date);
+    });
   };
 
   return (
-    <div className="relative">
-      {/* Edit mode toggle */}
-      <button
-        onClick={() => setIsEditMode(!isEditMode)}
-        className="absolute top-0 right-0 p-2 text-gray-500 hover:text-gray-700"
-      >
-        <PencilIcon className="h-5 w-5" />
-      </button>
+    <div className="bg-white rounded-lg shadow p-6 relative">
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
 
-      {/* Timeline */}
-      <div className="space-y-4">
-        {/* Start marker */}
-        <div className="text-center text-sm text-gray-400">
-          <div>Departure</div>
-          <div className="text-xs">
-            {destinations[0]?.city || destinations[0]?.country}
-            <span className="mx-2">•</span>
-            <span>{formatShortDate(new Date(destinations[0]?.start_date))}</span>
-          </div>
-        </div>
-
-        {/* Timeline items with insert buttons */}
-        {timelineItems.map((item, index) => (
-          <div key={item.id} className="relative">
-            {/* Add button before first item */}
-            {isEditMode && index === 0 && (
-              <div className="flex justify-center mb-2">
-                <button
-                  onClick={() => onAdd?.(null)}
-                  className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </button>
+        <div className="space-y-6">
+          {/* Destinations */}
+          {sortedDestinations.map((destination, index) => (
+            <div key={destination.destination_id} className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border-2 border-blue-500 flex items-center justify-center relative">
+                <span className="text-sm font-medium text-blue-500">{index + 1}</span>
               </div>
-            )}
-
-            {/* Timeline item */}
-            <div
-              className={`p-4 rounded-lg border ${
-                item.type === 'destination' ? 'bg-white' : 'bg-gray-50'
-              }`}
-            >
-              {item.type === 'destination' ? (
-                <DestinationBlock
-                  destination={item.data as Destination}
-                  isExpanded={expandedItems.has(item.id)}
-                  onToggleExpand={() => toggleExpand(item.id)}
-                  onEdit={isEditMode ? () => onEdit?.(item) : undefined}
-                />
-              ) : (
-                <TransportBlock
-                  transport={item.data as Transport}
-                  isExpanded={expandedItems.has(item.id)}
-                  onToggleExpand={() => toggleExpand(item.id)}
-                  onEdit={isEditMode ? () => onEdit?.(item) : undefined}
-                />
-              )}
+              <div className="flex-1">
+                {/* Collapsed View */}
+                <div className="flex items-center justify-between">
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => setSelectedDestination(destination)}
+                  >
+                    <div className="flex items-start gap-2">
+                      <MapPinIcon className="h-5 w-5 text-gray-400 mt-1" />
+                      {renderLocation(destination)}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                      <BuildingOfficeIcon className="h-4 w-4" />
+                      <span>{destination.accommodation.name} • {calculateNights(destination.start_date.toString(), destination.end_date.toString())} nights</span>
+                    </div>
+                  </div>
+                  {!hideControls && (
+                    <button
+                      onClick={() => onEdit(destination)}
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      <PencilIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-
-            {/* Add button between items */}
-            {isEditMode && index < timelineItems.length - 1 && (
-              <div className="flex justify-center my-2">
-                <button
-                  onClick={() => onAdd?.(item.id)}
-                  className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Add button after last item */}
-            {isEditMode && index === timelineItems.length - 1 && (
-              <div className="flex justify-center mt-2">
-                <button
-                  onClick={() => onAdd?.(item.id)}
-                  className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* End marker */}
-        <div className="text-center text-sm text-gray-400">
-          <div>Return</div>
-          <div className="text-xs">
-            {destinations[destinations.length - 1]?.city || destinations[destinations.length - 1]?.country}
-            <span className="mx-2">•</span>
-            <span>{formatShortDate(new Date(destinations[destinations.length - 1]?.end_date))}</span>
-          </div>
+          ))}
         </div>
       </div>
+
+      {/* Place Details Modal */}
+      {selectedDestination && (
+        <PlaceDetailsModal
+          isOpen={!!selectedDestination}
+          onClose={() => setSelectedDestination(null)}
+          destination={selectedDestination}
+          activities={getDestinationActivities(selectedDestination)}
+        />
+      )}
     </div>
   );
+}
+
+function calculateNights(start: string, end: string): number {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 function formatShortDate(date: Date): string {

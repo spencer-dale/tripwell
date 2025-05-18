@@ -1,11 +1,11 @@
 'use client'
 
-import { Trip, Activity, Transaction } from '@/src/app/lib/types';
+import { Trip, Activity, Transaction, Destination } from '@/src/app/lib/types';
 import { CollapsedItineraryItem } from '../itinerary/itinerary-table'
 import { commissioner, questrial } from '../fonts';
 import { formatCurrency } from '../../lib/utils';
 import { TripHighlights } from './trip-highlights';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { convertToCAD } from '@/src/app/lib/currency';
 import { Button } from '../button';
@@ -19,6 +19,9 @@ interface TripOverviewProps {
   onAddHighlight: () => void;
   onSwitchToPlans: () => void;
   onSwitchToSpend: () => void;
+  onAddDestination: (destination: Destination | null) => void;
+  setSelectedDestination: (destination: Destination) => void;
+  setShowNewExpenseModal: (show: boolean) => void;
 }
 
 export function TripOverview({
@@ -28,15 +31,13 @@ export function TripOverview({
   highlights,
   onAddHighlight,
   onSwitchToPlans,
-  onSwitchToSpend
+  onSwitchToSpend,
+  onAddDestination,
+  setSelectedDestination,
+  setShowNewExpenseModal
 }: TripOverviewProps) {
   const router = useRouter();
   
-  // Calculate total expenses in CAD
-  const totalExpenses = expenses.reduce((sum, expense) => {
-    return sum + convertToCAD(expense.amount, expense.currency);
-  }, 0);
-
   // Calculate total accommodation costs in CAD
   const totalAccommodationCost = trip.destinations.reduce((sum, destination) => {
     return sum + convertToCAD(
@@ -45,33 +46,104 @@ export function TripOverview({
     );
   }, 0);
 
+  // Calculate transportation costs
+  const totalTransportationCost = expenses
+    .filter(expense => expense.category.toLowerCase().includes('transport'))
+    .reduce((sum, expense) => sum + convertToCAD(expense.amount, expense.currency), 0);
+
+  // Calculate other costs (excluding accommodation and transportation)
+  const totalOtherCost = expenses
+    .filter(expense => {
+      const category = expense.category.toLowerCase();
+      return !category.includes('transport') && !category.includes('accommodation');
+    })
+    .reduce((sum, expense) => sum + convertToCAD(expense.amount, expense.currency), 0);
+
+  // Calculate total expenses in CAD (including accommodation and transportation)
+  const totalExpenses = expenses.reduce((sum, expense) => {
+    return sum + convertToCAD(expense.amount, expense.currency);
+  }, 0) + totalAccommodationCost + totalTransportationCost;
+
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col">
       {/* Trip Highlights Section */}
-      <TripHighlights
-        highlights={highlights}
-        onAddHighlight={onAddHighlight}
-      />
+      <div className="flex-none">
+        <TripHighlights
+          highlights={highlights}
+          onAddHighlight={onAddHighlight}
+        />
+      </div>
 
       {/* Quick Actions Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Trip Timeline */}
-        <TripTimeline
-          trip={trip}
-          onViewItinerary={onSwitchToPlans}
-        />
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+        {/* View Itinerary Button */}
+        <div className="bg-white rounded-lg shadow p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Your Itinerary</h2>
+            <button
+              onClick={() => onAddDestination(null)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add place
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-3">
+            {trip.destinations.map((destination, index) => {
+              const destinationActivities = activities.filter(activity => {
+                const activityDate = new Date(activity.activity_date);
+                return activityDate >= new Date(destination.start_date) && 
+                        activityDate <= new Date(destination.end_date);
+              });
+
+              return (
+                <div 
+                  key={destination.destination_id} 
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => setSelectedDestination(destination)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium">{destination.city || destination.country}</div>
+                      <div className="text-sm text-gray-500">
+                        {formatDateRange(destination.start_date, destination.end_date)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {destinationActivities.length} activities
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* View Itinerary Button */}
+          <div className="mt-4">
+            <Button
+              onClick={onSwitchToPlans}
+              className="w-full flex items-center justify-center gap-2 px-8 py-4 text-lg"
+            >
+              View Full Itinerary
+              <ArrowRightIcon className="h-6 w-6" />
+            </Button>
+          </div>
+        </div>
 
         {/* Expenses Summary Card */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold mb-4">Expenses</h2>
-            <Button
-              onClick={onSwitchToSpend}
-              className="flex items-center gap-2"
+            <h2 className="text-xl font-semibold">Spend</h2>
+            <button
+              onClick={() => setShowNewExpenseModal(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
             >
-              All Expenses
-              <ArrowRightIcon className="h-5 w-5" />
-            </Button>
+              <PlusIcon className="h-4 w-4" />
+              Add expense
+            </button>
           </div>
           
           {/* Total Expenses */}
@@ -83,24 +155,55 @@ export function TripOverview({
             <p className="text-sm text-gray-500 mt-1">Total trip expenses</p>
           </div>
 
-          {/* Accommodation Costs */}
-          <div className="mb-6">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold">{formatCurrency(totalAccommodationCost)}</span>
-              <span className="text-gray-500">CAD</span>
+          {/* Category Breakdown */}
+          <div className="space-y-4 mb-6">
+            {/* Accommodation */}
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold">{formatCurrency(totalAccommodationCost)}</span>
+                <span className="text-gray-500">CAD</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Accommodation</p>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Total accommodation costs</p>
+
+            {/* Transportation */}
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold">{formatCurrency(totalTransportationCost)}</span>
+                <span className="text-gray-500">CAD</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Transportation</p>
+            </div>
+
+            {/* Other */}
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold">{formatCurrency(totalOtherCost)}</span>
+                <span className="text-gray-500">CAD</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Everything else</p>
+            </div>
           </div>
 
+          {/* View All Expenses Button */}
+          <Button
+            onClick={onSwitchToSpend}
+            className="w-full flex items-center justify-center gap-2 px-8 py-4 text-lg"
+          >
+            View All Expenses
+            <ArrowRightIcon className="h-6 w-6" />
+          </Button>
         </div>
       </div>
 
       {/* Current Day Activities (if trip is ongoing) */}
       {isTripOngoing(trip.start_date, trip.end_date) && (
-        <CurrentDayItineraryTable
-          activities={getCurrentDayActivities(activities)}
-          currentDate={new Date()}
-        />
+        <div className="flex-none">
+          <CurrentDayItineraryTable
+            activities={getCurrentDayActivities(activities)}
+            currentDate={new Date()}
+          />
+        </div>
       )}
     </div>
   );
@@ -207,9 +310,9 @@ function ExpensesByCategoryTable(props: any) {
 function ExpenseCurrenciesByCategory(props: any) {
   let currencyToTotalAmountMap = new Map()
   props.expenses.map((expense: Transaction) => {
-    let updatedTotal = expense.amount
+    let updatedTotal = expense.amount || 0
     if (currencyToTotalAmountMap.has(expense.currency)) {
-      updatedTotal += currencyToTotalAmountMap.get(expense.currency)
+      updatedTotal += currencyToTotalAmountMap.get(expense.currency) || 0
     }
     currencyToTotalAmountMap.set(expense.currency, updatedTotal)
   })
@@ -219,10 +322,32 @@ function ExpenseCurrenciesByCategory(props: any) {
       {Array.from(currencyToTotalAmountMap.entries()).map(([currency, amount], idx) => (
         <div key={idx}>
           <p className={`${questrial.className} text-md mb-0`}>
-            {currency} {formatCurrency(amount)}
+            {currency} {formatCurrency(amount || 0)}
           </p>
         </div>
       ))}
     </div>
   );
+}
+
+export function formatDateRange(startDate: Date, endDate: Date): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  const startMonth = start.toLocaleString('default', { month: 'short' });
+  const endMonth = end.toLocaleString('default', { month: 'short' });
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const startYear = start.getFullYear();
+  const endYear = end.getFullYear();
+
+  if (startYear === endYear) {
+    if (startMonth === endMonth) {
+      return `${startMonth} ${startDay}-${endDay}, ${startYear}`;
+    } else {
+      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${startYear}`;
+    }
+  } else {
+    return `${startMonth} ${startDay}, ${startYear} - ${endMonth} ${endDay}, ${endYear}`;
+  }
 }

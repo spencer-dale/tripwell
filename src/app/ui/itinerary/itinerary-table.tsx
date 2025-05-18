@@ -30,38 +30,49 @@ export function ItineraryTableContainer({ children }: { children: React.ReactNod
 export function ItineraryTable(props: any) {
   if (props.activities.length == 0) { return <></> }
 
-  let sortedActivities = props.activities.toSorted((a: Activity, b: Activity) => new Date(a.activity_date).getTime() - new Date(b.activity_date).getTime())
+  let sortedActivities = props.activities.toSorted((a: Activity, b: Activity) => {
+    const dateA = new Date(a.activity_date);
+    const dateB = new Date(b.activity_date);
+    return dateA.getTime() - dateB.getTime();
+  });
+  
   let groupedActivities: activityDateGroup[] = []
   let activeGroup: activityDateGroup = {
-    date: sortedActivities[0].activity_date,
+    date: new Date(sortedActivities[0].activity_date),
     activities: [sortedActivities[0]]
   }
+  
   sortedActivities.map((activity: Activity, idx: number) => {
     if (idx === 0) {
       // already accounted for, above
-    } else if (activity.activity_date !== sortedActivities[idx-1].activity_date) {
-      groupedActivities.push(activeGroup)
-      activeGroup = {
-        date: activity.activity_date,
-        activities: [activity]
-      }
     } else {
-      activeGroup.activities.push(activity)
+      const currentDate = new Date(activity.activity_date);
+      const prevDate = new Date(sortedActivities[idx-1].activity_date);
+      
+      if (currentDate.toDateString() !== prevDate.toDateString()) {
+        groupedActivities.push(activeGroup)
+        activeGroup = {
+          date: currentDate,
+          activities: [activity]
+        }
+      } else {
+        activeGroup.activities.push(activity)
+      }
     }
   })
   groupedActivities.push(activeGroup)
-  console.log("final activity groups", groupedActivities)
+  // console.log("final activity groups", groupedActivities)
 
   return (
     <>
       {groupedActivities?.map((group: activityDateGroup, idx: number) => (
         <div
-          key={idx}
+          key={`group-${group.date.toISOString()}`}
           className="my-4 w-full"
         >
           <div className="mt-2">
             <ItineraryGroup
-              key={idx}
+              key={`group-${group.date.toISOString()}`}
               group={group}
               itineraryItems={props.itineraryItems}
             />

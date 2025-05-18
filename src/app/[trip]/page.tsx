@@ -1,12 +1,68 @@
 import { getTransactionsByTripId } from '../lib/db/transactions';
 import { getActivitiesByTripId, linkExpensesToActivity, unlinkExpense } from '../lib/db/activities';
-import { Trip } from '../ui/trip/trip'
+import { Trip as TripComponent } from '../ui/trip/trip'
 import { getTripById } from '../lib/db/trips';
 import { getTransportsByTripId } from '../lib/db/transports';
-import { Activity, Transaction } from '../lib/types';
+import { Activity, Transaction, SerializedActivity, SerializedTransaction, SerializedTrip, SerializedDestination, Destination, Trip } from '../lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+
+// Helper function to serialize MongoDB documents
+function serializeData<T>(data: T): T extends Date ? string : T extends Array<infer U> ? Array<ReturnType<typeof serializeData<U>>> : T extends object ? { [K in keyof T as K extends '_id' | '__v' ? never : K]: ReturnType<typeof serializeData<T[K]>> } : T {
+  if (!data) return null as any;
+  if (Array.isArray(data)) {
+    return data.map(item => serializeData(item)) as any;
+  }
+  if (data instanceof Date) {
+    return data.toISOString() as any;
+  }
+  if (typeof data === 'object' && data !== null) {
+    // Handle MongoDB documents
+    if ('_doc' in data) {
+      return serializeData(data._doc) as any;
+    }
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (key === '_id' || key === '__v' || key === '$__' || key === '$isNew') continue; // Skip MongoDB specific fields
+      serialized[key] = serializeData(value);
+    }
+    return serialized as any;
+  }
+  return data as any;
+}
+
+// Helper functions to convert serialized objects back to their original types
+function deserializeActivity(activity: SerializedActivity): Activity {
+  return {
+    ...activity,
+    activity_date: new Date(activity.activity_date)
+  };
+}
+
+function deserializeTransaction(transaction: SerializedTransaction): Transaction {
+  return {
+    ...transaction,
+    transaction_date: new Date(transaction.transaction_date)
+  };
+}
+
+function deserializeDestination(destination: SerializedDestination): Destination {
+  return {
+    ...destination,
+    start_date: new Date(destination.start_date),
+    end_date: new Date(destination.end_date)
+  };
+}
+
+function deserializeTrip(trip: SerializedTrip): Trip {
+  return {
+    ...trip,
+    start_date: new Date(trip.start_date),
+    end_date: new Date(trip.end_date),
+    destinations: trip.destinations.map(deserializeDestination)
+  };
+}
 
 // Mark these functions as server actions
 async function handleLinkExpensesToActivity(activityId: string, expenseId: string) {
@@ -36,8 +92,16 @@ export default async function Page({ params }: { params: { trip: string } }) {
     getTransportsByTripId(trip.trip_id)
   ])
 
+  // Serialize all data before passing to client components
+  const serializedTrip = serializeData(trip);
+  const serializedActivities = serializeData(activities);
+  // console.log("SERIALIZED ACTIVITIES")
+  // console.log(serializedActivities)
+  const serializedExpenses = serializeData(expenses);
+  const serializedTransports = serializeData(transports);
+
   return (
-    <div className="relative h-[87vh] overflow-hidden">
+    <div className="relative h-screen pb-16 overflow-hidden">
       <Image
         src="/trip-banner.png"
         alt="Trip banner"
@@ -49,18 +113,18 @@ export default async function Page({ params }: { params: { trip: string } }) {
       />
       <Link
         href="/trips"
-        className="absolute z-2 bg-white rounded-full shadow-lg p-2 flex items-center justify-center hover:bg-gray-100 transition-colors"
+        className="absolute z-1 bg-white rounded-full shadow-lg p-2 flex items-center justify-center hover:bg-gray-100 transition-colors"
         style={{ width: 40, height: 40 }}
       >
         <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
       </Link>
-      <div className="relative z-1 pt-44 sm:pt-56 md:pt-64 h-full">
-        <Trip
-          activities={JSON.parse(JSON.stringify(activities))}
-          expenses={JSON.parse(JSON.stringify(expenses))}
-          transports={JSON.parse(JSON.stringify(transports))}
+      <div className="relative z-0 mt-48 sm:mt-56 md:mt-64">
+        <TripComponent
+          activities={serializedActivities}
+          expenses={serializedExpenses}
+          transports={serializedTransports}
           linkExpensesToActivity={handleLinkExpensesToActivity}
-          trip={trip}
+          trip={serializedTrip}
           unlinkExpense={handleUnlinkExpense}
         />
       </div>

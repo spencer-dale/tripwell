@@ -15,6 +15,8 @@ export async function updateActivity(activity: Activity) {
     description: activity.description,
     activity_date: activity.activity_date,
     category: activity.category,
+    start_time: activity.start_time,
+    end_time: activity.end_time,
   }
 
   await connectDb()
@@ -29,7 +31,7 @@ export async function deleteActivity(activity: Activity) {
   await activities.findOneAndDelete(filter)
 }
 
-export async function getActivitiesByTripId(trip_id: string) {
+export async function getActivitiesByTripId(trip_id: string): Promise<Activity[]> {
     await connectDb()
     return await activities.find({trip_id: trip_id})
 }

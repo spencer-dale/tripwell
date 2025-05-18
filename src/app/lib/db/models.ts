@@ -23,6 +23,10 @@ let destinationSchema = new mongoose.Schema({
     city: String,
     region: String,
     accommodation: accommodationSchema,
+    activity_ids: {
+        type: [String],
+        default: []
+    }
 });
 
 let transactionSchema = new mongoose.Schema({
@@ -45,6 +49,8 @@ let activitySchema = new mongoose.Schema({
     description: String,
     activity_date: Date,
     category: String,
+    start_time: String,
+    end_time: String,
 });
 
 let tripSchema = new mongoose.Schema({

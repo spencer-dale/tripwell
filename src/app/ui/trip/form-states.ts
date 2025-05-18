@@ -1,6 +1,6 @@
 export type ActivityFormState = {
   activityDescription: string,
-  activityDate: Date
+  activityDate: Date,
   activityCategory: string,
 }
 
