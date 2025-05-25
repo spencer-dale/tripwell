@@ -10,6 +10,8 @@ import { PlansCalendar } from './plans-calendar';
 import { useState } from 'react';
 import { ActivityDetailsPanel } from './activity-details-sheet';
 
+type ViewMode = 'list' | 'calendar';
+
 interface ActivityCardProps {
   activity: Activity;
   onClick: () => void;
@@ -69,8 +71,6 @@ interface PlaceDetailsPanelProps {
   destination: Destination;
   activities: Activity[];
 }
-
-type ViewMode = 'list' | 'calendar';
 
 export function PlaceDetailsPanel({ 
   isOpen, 

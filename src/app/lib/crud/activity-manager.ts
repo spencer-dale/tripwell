@@ -22,6 +22,7 @@ export class ActivityManager {
       activity_date: details.date,
       category: details.category,
       destination_id: details.destination_id,
+      is_highlight: false
     }
     console.log("creating activity, ", activity)
     createActivity(activity)

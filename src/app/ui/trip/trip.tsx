@@ -193,8 +193,11 @@ export function Trip(props: {
     }
   }
 
-  const unlinkActivity = (expense: Transaction) => {
-    props.unlinkExpense(expense.transaction_id);
+  const unlinkActivity = (activity: Activity) => {
+    const linkedExpense = expenses.find(expense => expense.activity_id === activity.activity_id);
+    if (linkedExpense) {
+      props.unlinkExpense(linkedExpense.transaction_id);
+    }
   }
 
   let createExpenseFromForm = (state: ExpenseFormState) => {
@@ -251,10 +254,7 @@ export function Trip(props: {
     if (linkedActivities.length > 0) {
       linkedActivitiesTable = <LinkedActivitiesTable
         activities={linkedActivities}
-        // expense={expense}
         activityFormState={activityFormState}
-        onEdit={() => {}}
-        onSave={activityManager.update}
         unlinkActivity={unlinkActivity}
         setActivityFormState={(activity: Activity) => setActivityFormState(formStateFromActivity(activity))}
       />
@@ -557,6 +557,7 @@ export function Trip(props: {
             setActivityFormState(formStateFromActivity(activity));
             setShowEditActivityModal(true);
           }}
+          onToggleHighlight={handleToggleHighlight}
         />
         <ExpensesPanel
           isOpen={showExpenses}

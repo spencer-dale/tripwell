@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { EditActivityModal } from '../trip/edit-item-modals';
 import { InvisibleButton } from '../button';
 import { dateToDisplay } from '../../lib/utils';
+import { ActivityFormState } from '../trip/form-states';
 
 type activityDateGroup = {
   date: Date,
@@ -230,7 +231,14 @@ function ExpandedItineraryItemDetails(props: any) {
   );
 }
 
-export function LinkedActivitiesTable(props: any) {
+interface LinkedActivitiesTableProps {
+  activities: Activity[];
+  activityFormState: ActivityFormState;
+  setActivityFormState: (activity: Activity) => void;
+  unlinkActivity: (activity: Activity) => void;
+}
+
+export function LinkedActivitiesTable(props: LinkedActivitiesTableProps) {
   let linkedActivities = props.activities
 
   return (

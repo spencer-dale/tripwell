@@ -20,6 +20,7 @@ interface ItineraryPanelProps {
   onAddDestination: (afterItemId: string | null) => void;
   onReorderDestinations: (items: any[]) => void;
   onEditActivity: (activity: Activity) => void;
+  onToggleHighlight: (activity: Activity) => void;
 }
 
 export function ItineraryPanel({
@@ -34,6 +35,7 @@ export function ItineraryPanel({
   onAddDestination,
   onReorderDestinations,
   onEditActivity,
+  onToggleHighlight,
 }: ItineraryPanelProps) {
   const [currentView, setCurrentView] = useState<ItineraryView>('list');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
@@ -124,7 +126,7 @@ export function ItineraryPanel({
             setSelectedDestination(null);
           }}
           onEditActivity={onEditActivity}
-          onToggleHighlight={onEditActivity}
+          onToggleHighlight={onToggleHighlight}
           destination={selectedDestination}
           activities={activities.filter(activity => activity.destination_id === selectedDestination.destination_id)}
         />

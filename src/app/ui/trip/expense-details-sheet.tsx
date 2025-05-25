@@ -110,7 +110,14 @@ export function ExpenseDetailsPanel({
               {linkedActivities.length > 0 ? (
                 <LinkedActivitiesTable
                   activities={linkedActivities}
-                  unlinkActivity={onUnlinkActivity}
+                  activityFormState={{
+                    activityDescription: '',
+                    activityDate: new Date(),
+                    activityCategory: '',
+                    destination_id: ''
+                  }}
+                  unlinkActivity={(activity) => onUnlinkActivity(activity.activity_id)}
+                  setActivityFormState={() => {}}
                 />
               ) : (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">

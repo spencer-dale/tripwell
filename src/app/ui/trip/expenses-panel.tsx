@@ -5,6 +5,8 @@ import { ExpenseCard } from './expense-card';
 import { ExpenseDetailsPanel } from './expense-details-sheet';
 import { ExpensesSummary } from '../expenses/expenses-summary';
 
+type ViewMode = 'summary' | 'list';
+
 interface ExpensesPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,8 +18,6 @@ interface ExpensesPanelProps {
   onLinkActivity: (expense: Transaction) => void;
   onUnlinkActivity: (expenseId: string, activityId: string) => void;
 }
-
-type ViewMode = 'summary' | 'list';
 
 export function ExpensesPanel({
   isOpen,
