@@ -103,24 +103,41 @@ function ItineraryGroup(props: any) {
   )
 }
 
-export function ItineraryItem(props: any) {
+interface ItineraryItemProps {
+  activity: Activity;
+  linkedExpenseTable: JSX.Element;
+  showEditActivityModal: () => void;
+  showLinkExpenseModal: () => void;
+  onSelect: (activity: Activity) => void;
+}
+
+export function ItineraryItem({
+  activity,
+  linkedExpenseTable,
+  showEditActivityModal,
+  showLinkExpenseModal,
+  onSelect,
+}: ItineraryItemProps) {
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div>
+    <div
+      className="flex flex-col p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50"
+      onClick={() => onSelect(activity)}
+    >
       {expanded ?
         <ExpandedItineraryItem
-          activity={props.activity}
+          activity={activity}
           collapse={() => setExpanded(false)}
-          linkedExpenseTable={props.linkedExpenseTable}
-          showEditActivityModal={props.showEditActivityModal}
-          showLinkExpenseModal={props.showLinkExpenseModal}
+          linkedExpenseTable={linkedExpenseTable}
+          showEditActivityModal={showEditActivityModal}
+          showLinkExpenseModal={showLinkExpenseModal}
         /> : 
         <InvisibleButton
           onClick={() => setExpanded(true)}
         >
           <CollapsedItineraryItem
-            activity={props.activity}
+            activity={activity}
           />
         </InvisibleButton>
       }

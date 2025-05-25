@@ -53,6 +53,15 @@ export function TripTimeline({ trip, onViewItinerary }: TripTimelineProps) {
     }
   };
 
+  const formatUTCDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6 relative">
       <div className="flex justify-between items-center mb-6">
@@ -122,8 +131,8 @@ export function TripTimeline({ trip, onViewItinerary }: TripTimelineProps) {
                       <div>
                         <div className="text-sm font-medium text-gray-500">Dates</div>
                         <div className="mt-1 text-sm text-gray-900">
-                          {new Date(destination.start_date).toLocaleDateString()} - 
-                          {new Date(destination.end_date).toLocaleDateString()}
+                          {formatUTCDate(new Date(destination.start_date))} - 
+                          {formatUTCDate(new Date(destination.end_date))}
                         </div>
                       </div>
                       <div>

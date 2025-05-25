@@ -115,17 +115,18 @@ export function ItineraryPanel({
             onEditDestination(selectedDestination);
             setSelectedDestination(null);
           }}
+          onDelete={() => {
+            onEditDestination(selectedDestination);
+            setSelectedDestination(null);
+          }}
           onAddActivity={() => {
             setShowNewActivityModal(true);
             setSelectedDestination(null);
           }}
           onEditActivity={onEditActivity}
+          onToggleHighlight={onEditActivity}
           destination={selectedDestination}
-          activities={activities.filter(activity => {
-            const activityDate = new Date(activity.activity_date);
-            return activityDate >= new Date(selectedDestination.start_date) && 
-                   activityDate <= new Date(selectedDestination.end_date);
-          })}
+          activities={activities.filter(activity => activity.destination_id === selectedDestination.destination_id)}
         />
       )}
     </div>

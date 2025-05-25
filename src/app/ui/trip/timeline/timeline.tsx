@@ -64,12 +64,24 @@ export default function Timeline({
     }
   };
 
-  const getDestinationActivities = (destination: Destination) => {
-    if (!activities) return [];
-    return activities.filter(activity => {
-      const activityDate = new Date(activity.activity_date);
-      return activityDate >= new Date(destination.start_date) && 
-             activityDate <= new Date(destination.end_date);
+  const getDestinationActivities = (destination: Destination): Activity[] => {
+    return activities.filter(activity => activity.destination_id === destination.destination_id);
+  };
+
+  const formatUTCDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+  };
+
+  const formatDateBox = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -144,13 +156,6 @@ function formatShortDate(date: Date): string {
   return `${day} ${month} ${dayNum}`;
 }
 
-function formatDateBox(date: Date): string {
-  const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-  const month = date.toLocaleDateString('en-US', { month: 'short' });
-  const dayNum = date.toLocaleDateString('en-US', { day: '2-digit' });
-  return `${day}\n${month} ${dayNum}`;
-}
-
 function getNightsCount(start: Date, end: Date): number {
   const diffTime = Math.abs(end.getTime() - start.getTime());
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -168,6 +173,23 @@ function DestinationBlock({
   onEdit?: () => void;
 }) {
   const nights = getNightsCount(new Date(destination.start_date), new Date(destination.end_date));
+  
+  const formatUTCDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+  };
+
+  const formatDateBox = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
   
   return (
     <div>
@@ -198,7 +220,7 @@ function DestinationBlock({
       </div>
       {isExpanded && (
         <div className="mt-2 text-sm text-gray-500">
-          <p>Dates: {new Date(destination.start_date).toLocaleDateString()} - {new Date(destination.end_date).toLocaleDateString()}</p>
+          <p>Dates: {formatUTCDate(new Date(destination.start_date))} - {formatUTCDate(new Date(destination.end_date))}</p>
           {destination.city && <p>City: {destination.city}</p>}
           {destination.region && <p>Region: {destination.region}</p>}
           <p>Accommodation: {destination.accommodation.name}</p>

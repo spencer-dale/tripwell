@@ -15,9 +15,6 @@ import { Activity, Transaction, Trip as TripType, Destination, SerializedActivit
 import { Tab } from '../itinerary/types';
 import { TripOverview } from './trip-overview';
 import { LinkExpenseModal } from '../itinerary/link-expense-modal'
-import { TripExpenses } from './trip-expenses';
-import { PlansCalendar } from './plans-calendar';
-import Timeline from './timeline/timeline';
 import { Transport } from '@/src/app/lib/types/transport';
 import { DestinationForm } from './destination-form/destination-form';
 import { DestinationFormState } from './destination-form/types';
@@ -26,6 +23,7 @@ import { handleCreateDestination, handleUpdateDestination, handleDeleteDestinati
 import { ItineraryPanel } from './itinerary-panel';
 import { ExpensesPanel } from './expenses-panel';
 import { PlaceDetailsPanel } from './place-details-sheet';
+import { ActivityDetailsPanel } from './activity-details-sheet';
 
 function isActivityFormStateComplete(state: ActivityFormState) : boolean {
   return (state.activityDescription !== "")
@@ -42,6 +40,7 @@ function formStateFromActivity(activity: Activity | null) : ActivityFormState {
       activityDate: new Date(Date.now()),
       activityDescription: "",
       activityCategory: "",
+      destination_id: "",
     }
   }
 
@@ -68,6 +67,7 @@ function formStateFromActivity(activity: Activity | null) : ActivityFormState {
     activityDate: utcDate,
     activityDescription: activity.description,
     activityCategory: activity.category,
+    destination_id: activity.destination_id,
   }
 }
 
@@ -134,7 +134,6 @@ export function Trip(props: {
   unlinkExpense: (expenseId: string) => Promise<void>;
 }) {
   const router = useRouter();
-  const [highlights, setHighlights] = useState<any[]>([])
   const [showFullItinerary, setShowFullItinerary] = useState(false)
   const [showExpenses, setShowExpenses] = useState(false)
 
@@ -154,10 +153,28 @@ export function Trip(props: {
   const [selectedPlaceDetails, setSelectedPlaceDetails] = useState<Destination | null>(null);
   const [showDestinationForm, setShowDestinationForm] = useState(false);
 
+  const [selectedActivityDetails, setSelectedActivityDetails] = useState<Activity | null>(null);
+
   // Convert serialized data to regular types
   const trip = deserializeTrip(props.trip);
   const activities = props.activities.map(deserializeActivity);
   const expenses = props.expenses.map(deserializeTransaction);
+
+  // Create accommodation expenses from destinations
+  const accommodationExpenses = trip.destinations.map(destination => ({
+    transaction_id: `acc_${destination.destination_id}`,
+    trip_id: trip.trip_id,
+    activity_id: '',
+    description: `Accommodation: ${destination.accommodation.name}`,
+    amount: destination.accommodation.total_cost,
+    currency: destination.accommodation.currency,
+    transaction_date: new Date(destination.start_date),
+    category: 'Accommodation',
+    notes: destination.accommodation.address
+  }));
+
+  // Combine all expenses
+  const allExpenses = [...expenses, ...accommodationExpenses];
 
   let activityManager = new ActivityManager(trip.trip_id)
   let expenseManager = new ExpenseManager(trip.trip_id)
@@ -169,6 +186,7 @@ export function Trip(props: {
         date: new Date(state.activityDate),
         description: state.activityDescription,
         category: state.activityCategory,
+        destination_id: state.destination_id,
       })
     } else {
       console.log("activity form incomplete: ", state)
@@ -222,6 +240,7 @@ export function Trip(props: {
           setShowEditActivityModal(true)
         }}
         showLinkExpenseModal={() => setShowLinkExpenseModal(true)}
+        onSelect={(activity) => setSelectedActivityDetails(activity)}
       />
     )
   }
@@ -419,6 +438,20 @@ export function Trip(props: {
     };
   };
 
+  const handleToggleHighlight = async (activity: Activity) => {
+    try {
+      const updatedActivity = {
+        ...activity,
+        is_highlight: !activity.is_highlight
+      };
+      await activityManager.update(updatedActivity);
+      router.refresh();
+      console.log("highlight toggled for activity: ", updatedActivity)
+    } catch (error) {
+      console.error('Error toggling highlight:', error);
+    }
+  };
+
   return (
     <>
       <div className="flex h-full flex-col md:flex-row md:overflow-hidden">
@@ -439,8 +472,6 @@ export function Trip(props: {
             trip={trip}
             activities={activities}
             expenses={expenses}
-            highlights={highlights}
-            onAddHighlight={handleAddHighlight}
             onSwitchToPlans={() => setShowFullItinerary(true)}
             onSwitchToSpend={() => setShowExpenses(true)}
             onAddDestination={(afterItemId) => {
@@ -451,11 +482,12 @@ export function Trip(props: {
             setShowNewExpenseModal={setShowNewExpenseModal}
           />
         </div>
-        <NewActivityModal
+        {selectedPlaceDetails && <NewActivityModal
           onClose={() => setShowNewActivityModal(false)}
           onCreate={createActivityFromForm}
           show={showNewActivityModal}
-        />
+          selectedDestination={selectedPlaceDetails}
+        />}
         <EditActivityModal
           activity={selectedActivity}
           activityFormState={activityFormState}
@@ -530,8 +562,19 @@ export function Trip(props: {
           isOpen={showExpenses}
           onClose={() => setShowExpenses(false)}
           trip={trip}
-          expenses={expenses}
+          expenses={allExpenses}
           expenseItems={expenseItems}
+          onEditExpense={(expense) => {
+            setSelectedExpense(expense);
+            setExpenseFormState(formStateFromExpense(expense));
+            setShowEditExpenseModal(true);
+          }}
+          onDeleteExpense={expenseManager.delete}
+          onLinkActivity={(expense) => {
+            setSelectedExpense(expense);
+            setShowLinkExpenseModal(true);
+          }}
+          onUnlinkActivity={props.unlinkExpense}
         />
         {/* Place Details Panel */}
         {selectedPlaceDetails && (
@@ -549,23 +592,45 @@ export function Trip(props: {
                 setSelectedDestination(formState);
                 setShowDestinationForm(true);
               }
-              setSelectedPlaceDetails(null);
+            }}
+            onDelete={() => {
+              if (selectedPlaceDetails.destination_id) {
+                handleDeleteDestination(selectedPlaceDetails.destination_id);
+                setSelectedPlaceDetails(null);
+              }
             }}
             onAddActivity={() => {
               setShowNewActivityModal(true);
-              setSelectedPlaceDetails(null);
             }}
             onEditActivity={(activity) => {
               setSelectedActivity(activity);
               setActivityFormState(formStateFromActivity(activity));
               setShowEditActivityModal(true);
             }}
+            onToggleHighlight={handleToggleHighlight}
             destination={selectedPlaceDetails}
-            activities={activities.filter(activity => {
-              const activityDate = new Date(activity.activity_date);
-              return activityDate >= new Date(selectedPlaceDetails.start_date) && 
-                     activityDate <= new Date(selectedPlaceDetails.end_date);
-            })}
+            activities={activities.filter(activity => activity.destination_id === selectedPlaceDetails.destination_id)}
+          />
+        )}
+        {selectedActivityDetails && (
+          <ActivityDetailsPanel
+            isOpen={!!selectedActivityDetails}
+            onClose={() => setSelectedActivityDetails(null)}
+            onEdit={() => {
+              setSelectedActivity(selectedActivityDetails);
+              setActivityFormState(formStateFromActivity(selectedActivityDetails));
+              setShowEditActivityModal(true);
+            }}
+            onDelete={() => {
+              activityManager.delete(selectedActivityDetails);
+              setSelectedActivityDetails(null);
+            }}
+            onAddExpense={() => {
+              setShowNewExpenseModal(true);
+            }}
+            activity={selectedActivityDetails}
+            linkedExpenses={expenses.filter(expense => expense.activity_id === selectedActivityDetails.activity_id)}
+            onUnlinkExpense={props.unlinkExpense}
           />
         )}
       </div>

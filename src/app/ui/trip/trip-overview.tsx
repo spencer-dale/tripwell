@@ -15,8 +15,6 @@ interface TripOverviewProps {
   trip: Trip;
   activities: Activity[];
   expenses: Transaction[];
-  highlights: any[]; // Replace with proper type
-  onAddHighlight: () => void;
   onSwitchToPlans: () => void;
   onSwitchToSpend: () => void;
   onAddDestination: (destination: Destination | null) => void;
@@ -24,12 +22,45 @@ interface TripOverviewProps {
   setShowNewExpenseModal: (show: boolean) => void;
 }
 
+interface DestinationCardProps {
+  destination: Destination;
+  activities: Activity[];
+  index: number;
+  onSelect: (destination: Destination) => void;
+}
+
+function DestinationCard({ destination, activities, index, onSelect }: DestinationCardProps) {
+  const destinationActivities = activities.filter(activity => 
+    activity.destination_id === destination.destination_id
+  );
+
+  return (
+    <div 
+      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+      onClick={() => onSelect(destination)}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+          <span className="text-sm font-medium text-blue-600">{index + 1}</span>
+        </div>
+        <div>
+          <div className="font-medium">{destination.city || destination.country}</div>
+          <div className="text-sm text-gray-500">
+            {formatDateRange(destination.start_date, destination.end_date)}
+          </div>
+        </div>
+      </div>
+      <div className="text-sm text-gray-500">
+        {destinationActivities.length} activities
+      </div>
+    </div>
+  );
+}
+
 export function TripOverview({
   trip,
   activities,
   expenses,
-  highlights,
-  onAddHighlight,
   onSwitchToPlans,
   onSwitchToSpend,
   onAddDestination,
@@ -62,18 +93,19 @@ export function TripOverview({
   // Calculate total expenses in CAD (including accommodation)
   const totalExpenses = totalOtherCost + totalTransportationCost + totalAccommodationCost;
 
+  const highlights = activities.filter(activity => activity.is_highlight);
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="space-y-6">
       {/* Trip Highlights Section */}
       <div className="flex-none">
         <TripHighlights
           highlights={highlights}
-          onAddHighlight={onAddHighlight}
         />
       </div>
 
       {/* Quick Actions Section */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0 mt-4">
         {/* View Itinerary Button */}
         <div className="bg-white rounded-lg shadow p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
@@ -87,36 +119,15 @@ export function TripOverview({
             </button>
           </div>
           <div className="flex-1 overflow-y-auto space-y-3">
-            {trip.destinations.map((destination, index) => {
-              const destinationActivities = activities.filter(activity => {
-                const activityDate = new Date(activity.activity_date);
-                return activityDate >= new Date(destination.start_date) && 
-                        activityDate <= new Date(destination.end_date);
-              });
-
-              return (
-                <div 
-                  key={destination.destination_id} 
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setSelectedDestination(destination)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">{index + 1}</span>
-                    </div>
-                    <div>
-                      <div className="font-medium">{destination.city || destination.country}</div>
-                      <div className="text-sm text-gray-500">
-                        {formatDateRange(destination.start_date, destination.end_date)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {destinationActivities.length} activities
-                  </div>
-                </div>
-              );
-            })}
+            {trip.destinations.map((destination, index) => (
+              <DestinationCard
+                key={destination.destination_id}
+                destination={destination}
+                activities={activities}
+                index={index}
+                onSelect={setSelectedDestination}
+              />
+            ))}
           </div>
 
           {/* View Itinerary Button */}

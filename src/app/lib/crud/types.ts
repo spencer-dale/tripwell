@@ -2,6 +2,7 @@ export type ActivityDetails = {
   date: Date
   description: string
   category: string
+  destination_id: string
 }
 
 export type TransactionDetails = {

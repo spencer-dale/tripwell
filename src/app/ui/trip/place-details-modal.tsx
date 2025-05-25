@@ -29,6 +29,15 @@ export function PlaceDetailsModal({ isOpen, onClose, destination, activities }: 
 
   const nights = calculateNights(destination.start_date.toString(), destination.end_date.toString());
 
+  const formatUTCDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+  };
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -92,8 +101,8 @@ export function PlaceDetailsModal({ isOpen, onClose, destination, activities }: 
                         <h4 className="font-medium text-gray-900">{destination.accommodation.name}</h4>
                         <p className="mt-1 text-sm text-gray-500">{destination.accommodation.address}</p>
                         <div className="mt-2 text-sm text-gray-500">
-                          <p>Check-in: {new Date(destination.start_date).toLocaleDateString()}</p>
-                          <p>Check-out: {new Date(destination.end_date).toLocaleDateString()}</p>
+                          <p>Check-in: {formatUTCDate(new Date(destination.start_date))}</p>
+                          <p>Check-out: {formatUTCDate(new Date(destination.end_date))}</p>
                           <p>{nights} {nights === 1 ? 'night' : 'nights'}</p>
                         </div>
                         <div className="mt-2">

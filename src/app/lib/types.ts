@@ -10,24 +10,24 @@ export type Accommodation = {
 
 export type Destination = {
     destination_id: string;
-    start_date: Date;
-    end_date: Date;
-    country: string;
+    trip_id: string;
     city?: string;
     region?: string;
+    country: string;
+    start_date: Date;
+    end_date: Date;
     accommodation: Accommodation;
-    activity_ids: string[];
 }
 
 export type SerializedDestination = {
     destination_id: string;
+    trip_id: string;
     start_date: string;
     end_date: string;
     country: string;
     city?: string;
     region?: string;
     accommodation: Accommodation;
-    activity_ids: string[];
 }
 
 export type Transaction = {
@@ -55,17 +55,23 @@ export type SerializedTransaction = {
 export type Activity = {
     activity_id: string;
     trip_id: string;
+    destination_id: string;
     description: string;
     activity_date: Date;
     category: string;
+    location?: string;
+    notes?: string;
+    is_highlight: boolean;
 }
 
 export type SerializedActivity = {
     activity_id: string;
     trip_id: string;
+    destination_id: string;
     description: string;
     activity_date: string;
     category: string;
+    is_highlight: boolean;
 }
 
 export type Trip = {

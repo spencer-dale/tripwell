@@ -2,18 +2,70 @@
 
 import { Destination, Activity } from '@/src/app/lib/types';
 import { Fragment } from 'react';
-import { MapPinIcon, BuildingOfficeIcon, CalendarIcon, ListBulletIcon, PencilIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, BuildingOfficeIcon, CalendarIcon, ListBulletIcon, PencilIcon, PlusIcon, ArrowLeftIcon, TrashIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { formatCurrency } from '@/src/app/lib/utils';
 import { convertToCAD } from '@/src/app/lib/currency';
 import { PlansCalendar } from './plans-calendar';
 import { useState } from 'react';
+import { ActivityDetailsPanel } from './activity-details-sheet';
+
+interface ActivityCardProps {
+  activity: Activity;
+  onClick: () => void;
+  onToggleHighlight: (activity: Activity) => void;
+}
+
+function ActivityCard({ activity, onClick, onToggleHighlight }: ActivityCardProps) {
+  return (
+    <div 
+      className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors relative"
+      onClick={onClick}
+    >
+      <div className="flex-1">
+        <p className="font-medium text-gray-900">{activity.description}</p>
+        <p className="text-sm text-gray-500">
+          {new Date(activity.activity_date).toLocaleString('en-US', {
+            timeZone: 'UTC',
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}
+        </p>
+        {activity.category && (
+          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
+            {activity.category}
+          </span>
+        )}
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleHighlight(activity);
+        }}
+        className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 transition-colors"
+      >
+        {activity.is_highlight ? (
+          <HeartSolidIcon className="h-5 w-5 text-red-500" />
+        ) : (
+          <HeartIcon className="h-5 w-5 text-gray-400" />
+        )}
+      </button>
+    </div>
+  );
+}
 
 interface PlaceDetailsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onDelete: () => void;
   onAddActivity: () => void;
   onEditActivity: (activity: Activity) => void;
+  onToggleHighlight: (activity: Activity) => void;
   destination: Destination;
   activities: Activity[];
 }
@@ -24,12 +76,15 @@ export function PlaceDetailsPanel({
   isOpen, 
   onClose, 
   onEdit,
+  onDelete,
   onAddActivity,
   onEditActivity,
+  onToggleHighlight,
   destination, 
   activities 
 }: PlaceDetailsPanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
   const calculateNights = (start: string, end: string): number => {
     const startDate = new Date(start);
@@ -39,6 +94,20 @@ export function PlaceDetailsPanel({
   };
 
   const nights = calculateNights(destination.start_date.toString(), destination.end_date.toString());
+
+  const formatAccommodationDates = (start: Date, end: Date): string => {
+    const startMonth = start.toLocaleString('default', { month: 'short' });
+    const endMonth = end.toLocaleString('default', { month: 'short' });
+    const startDay = start.getDate();
+    const endDay = end.getDate();
+    return `${startMonth} ${startDay} → ${endMonth} ${endDay}`;
+  };
+
+  const formatAccommodationPrice = (totalCost: number, currency: string, nights: number): string => {
+    const costInCAD = convertToCAD(totalCost, currency);
+    const nightlyRate = costInCAD / nights;
+    return `${formatCurrency(costInCAD)} CAD (${formatCurrency(nightlyRate)} /night)`;
+  };
 
   return (
     <div
@@ -50,7 +119,15 @@ export function PlaceDetailsPanel({
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-semibold">Place Details</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeftIcon className="h-5 w-5 text-gray-500" />
+            </button>
+            <h2 className="text-xl font-semibold">Place Details</h2>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -60,10 +137,10 @@ export function PlaceDetailsPanel({
               <PencilIcon className="h-5 w-5 text-gray-500" />
             </button>
             <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100"
+              onClick={onDelete}
+              className="p-2 rounded-full hover:bg-red-100"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <TrashIcon className="h-5 w-5 text-red-500" />
             </button>
           </div>
         </div>
@@ -93,25 +170,15 @@ export function PlaceDetailsPanel({
                   <h4 className="font-medium text-gray-900">{destination.accommodation.name}</h4>
                   <p className="mt-1 text-sm text-gray-500">{destination.accommodation.address}</p>
                   <div className="mt-2 text-sm text-gray-500">
-                    <p>Check-in: {new Date(destination.start_date).toLocaleDateString()}</p>
-                    <p>Check-out: {new Date(destination.end_date).toLocaleDateString()}</p>
+                    <p>{formatAccommodationDates(new Date(destination.start_date), new Date(destination.end_date))}</p>
                     <p>{nights} {nights === 1 ? 'night' : 'nights'}</p>
                   </div>
                   <div className="mt-2">
                     <p className="text-sm font-medium text-gray-900">
-                      Total Cost: {formatCurrency(
-                        convertToCAD(
-                          destination.accommodation.total_cost,
-                          destination.accommodation.currency
-                        )
-                      )}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Average nightly rate: {formatCurrency(
-                        convertToCAD(
-                          destination.accommodation.total_cost / nights,
-                          destination.accommodation.currency
-                        )
+                      {formatAccommodationPrice(
+                        destination.accommodation.total_cost,
+                        destination.accommodation.currency,
+                        nights
                       )}
                     </p>
                   </div>
@@ -156,31 +223,12 @@ export function PlaceDetailsPanel({
                 <div className="space-y-4">
                   {activities.length > 0 ? (
                     activities.map((activity) => (
-                      <div 
-                        key={activity.activity_id} 
-                        className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                        onClick={() => onEditActivity(activity)}
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{activity.description}</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(activity.activity_date).toLocaleString('en-US', {
-                              timeZone: 'UTC',
-                              year: 'numeric',
-                              month: 'numeric',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true
-                            })}
-                          </p>
-                          {activity.category && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
-                              {activity.category}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      <ActivityCard
+                        key={activity.activity_id}
+                        activity={activity}
+                        onClick={() => setSelectedActivity(activity)}
+                        onToggleHighlight={onToggleHighlight}
+                      />
                     ))
                   ) : (
                     <div className="text-center py-8">
@@ -208,6 +256,28 @@ export function PlaceDetailsPanel({
           </div>
         </div>
       </div>
+
+      {/* Activity Details Panel */}
+      {selectedActivity && (
+        <ActivityDetailsPanel
+          isOpen={!!selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+          onEdit={() => {
+            setSelectedActivity(null);
+            onEditActivity(selectedActivity);
+          }}
+          onDelete={() => {
+            setSelectedActivity(null);
+            // TODO: Implement delete functionality
+          }}
+          onAddExpense={() => {
+            // TODO: Implement add expense functionality
+          }}
+          activity={selectedActivity}
+          linkedExpenses={[]}
+          onUnlinkExpense={() => {}}
+        />
+      )}
     </div>
   );
 } 

@@ -2,6 +2,7 @@ export type ActivityFormState = {
   activityDescription: string,
   activityDate: Date,
   activityCategory: string,
+  destination_id: string,
 }
 
 export type ExpenseFormState = {

@@ -8,6 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { commissioner, questrial } from '../fonts';
+import { formatCurrency } from '@/src/app/lib/utils';
 
 export function LinkExpenseModal(props: any) {
   const router = useRouter()
@@ -92,5 +93,36 @@ export function LinkExpenseModal(props: any) {
       </Button>
       </Modal.Footer>
     </Modal>
+  );
+}
+
+interface LinkedExpenseTableProps {
+  expenses: Transaction[];
+  unlinkExpense: (expenseId: string) => void;
+}
+
+export function LinkedExpenseTable({ expenses, unlinkExpense }: LinkedExpenseTableProps) {
+  return (
+    <div className="space-y-2">
+      {expenses.map((expense) => (
+        <div
+          key={expense.transaction_id}
+          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+        >
+          <div>
+            <div className={`${questrial.className} font-medium`}>{expense.description}</div>
+            <div className={`${questrial.className} text-sm text-gray-500`}>
+              {formatCurrency(expense.amount)} {expense.currency}
+            </div>
+          </div>
+          <button
+            onClick={() => unlinkExpense(expense.transaction_id)}
+            className="text-red-500 hover:text-red-600"
+          >
+            Unlink
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }

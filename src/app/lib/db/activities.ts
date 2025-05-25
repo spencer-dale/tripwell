@@ -15,6 +15,7 @@ export async function updateActivity(activity: Activity) {
     description: activity.description,
     activity_date: activity.activity_date,
     category: activity.category,
+    is_highlight: activity.is_highlight
   }
 
   await connectDb()

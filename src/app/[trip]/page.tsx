@@ -111,13 +111,6 @@ export default async function Page({ params }: { params: { trip: string } }) {
         className="w-full h-48 sm:h-56 md:h-64 object-cover fixed top-0 left-0 z-0"
         style={{ minHeight: '12rem', maxHeight: '20vh' }}
       />
-      <Link
-        href="/trips"
-        className="absolute z-1 bg-white rounded-full shadow-lg p-2 flex items-center justify-center hover:bg-gray-100 transition-colors"
-        style={{ width: 40, height: 40 }}
-      >
-        <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
-      </Link>
       <div className="relative z-0 mt-48 sm:mt-56 md:mt-64">
         <TripComponent
           activities={serializedActivities}

@@ -7,6 +7,7 @@ import { ActivityFormState, ExpenseFormState } from './form-states';
 import { useState } from 'react';
 import Form from "react-bootstrap/Form";
 import { useRouter } from 'next/navigation';
+import { Destination } from '@/src/app/lib/types';
 
 export function EditActivityModal(props: any) {
   const router = useRouter();
@@ -44,6 +45,7 @@ export function EditActivityModal(props: any) {
           <ActivityDetailsEditor
             activityFormState={props.activityFormState}
             setActivityFormState={props.setActivityFormState}
+            selectedDestination={props.selectedDestination}
           />
         </Modal.Body>
         <Modal.Footer>
@@ -215,7 +217,13 @@ export function EditExpenseModal(props: any) {
   );
 }
 
-function ActivityDetailsEditor(props: any) {
+interface ActivityDetailsEditorProps {
+  activityFormState: ActivityFormState;
+  setActivityFormState: (state: ActivityFormState) => void;
+  selectedDestination: Destination;
+}
+
+function ActivityDetailsEditor(props: ActivityDetailsEditorProps) {
   let formState: ActivityFormState = props.activityFormState
   console.log("current state: ", formState)
 
@@ -315,8 +323,6 @@ function ActivityDetailsEditor(props: any) {
     var state: ActivityFormState = {
       ...formState,
       activityDate: newDate,
-      activityDescription: formState.activityDescription,
-      activityCategory: formState.activityCategory,
     }
     props.setActivityFormState(state)
   }
@@ -497,7 +503,14 @@ function ExpenseDetailsEditor(props: any) {
   )
 }
 
-export function NewActivityModal(props: any) {
+interface NewActivityModalProps {
+  show: boolean;
+  onClose: () => void;
+  onCreate: (formState: ActivityFormState) => void;
+  selectedDestination: Destination;
+}
+
+export function NewActivityModal(props: NewActivityModalProps) {
   const router = useRouter()
   const dateStringFromDate = (date: Date) => {
     return date.toISOString().substring(0,10)
@@ -506,6 +519,7 @@ export function NewActivityModal(props: any) {
     activityDescription: "",
     activityDate: new Date(dateStringFromDate(new Date(Date.now()))),
     activityCategory: "",
+    destination_id: props.selectedDestination.destination_id,
   }
   const [activityFormState, setActivityFormState] = useState<ActivityFormState>(emptyActivityFormState)
   let resetActivityFormState = () => {
@@ -527,6 +541,7 @@ export function NewActivityModal(props: any) {
           <ActivityDetailsEditor
             activityFormState={activityFormState}
             setActivityFormState={setActivityFormState}
+            selectedDestination={props.selectedDestination}
           />
         </Modal.Body>
         <Modal.Footer>
@@ -540,20 +555,6 @@ export function NewActivityModal(props: any) {
                   Cancel
                 </Button>
               </li>
-              {props.onUnlink
-                ? <li className="pe-1">
-                  <Button
-                    className={`${questrial.className} text-sm h-6`}
-                    onClick={() => {
-                      props.onUnlink()
-                      onClose()
-                    }}
-                  >
-                    Unlink
-                  </Button>
-                </li>
-                : <></>
-              }
               <li className="pe-1">
                 <Button
                   className={`${questrial.className} text-sm h-6`}

@@ -46,9 +46,11 @@ let transactionSchema = new mongoose.Schema({
 let activitySchema = new mongoose.Schema({
     activity_id: String,
     trip_id: String,
+    destination_id: String,
     description: String,
     activity_date: Date,
     category: String,
+    is_highlight: Boolean,
 });
 
 let tripSchema = new mongoose.Schema({
